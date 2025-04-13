@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Game Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/gameDashboard.css">
+</head>
+<body>
+   <!-- Custom Title Bar -->
+    <div class="title-bar">
+        <div class="title">CloudGame</div>
+        <div class="controls">
+            <button id="minimize-btn" class="control-btn">−</button>
+            <button id="maximize-btn" class="control-btn">□</button>
+            <button id="close-btn" class="control-btn">×</button>
+        </div>
+    </div>
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <div class="panel-header">
+      <h2>🎮 Game Library</h2>
+      <div class="last-sync" id="last-sync"></div>
+    </div>
+    <div class="game-library-container">
+      <div class="game-library" id="gameLibrary"></div>
+    </div>
+
+    <div class="sync-section">
+      <button onclick="syncGames()">
+        <span class="sync-icon">🔄</span> SYNC LIBRARY
+      </button>
+      <button onclick="showAddGameModal()">
+        <span class="sync-icon">➕</span> ADD GAME
+      </button>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <div class="account-info">
+      <h2>👤 My Account</h2>
+      <div class="account-details">
+        <div class="avatar">NP</div>
+        <div class="user-info">
+          <p id="username" class="username"></p>
+        </div>
+      </div>
+    </div>
+
+  <!--   <div class="completed-games"> -->
+  <!--     <h2>✅ Completed Games</h2> -->
+  <!--     <div class="game-item"> -->
+  <!--       <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80" alt="Cyber Game" /> -->
+  <!--       <p>Cyber Adventure</p> -->
+  <!--       <span class="completion-badge">100%</span> -->
+  <!--     </div> -->
+  <!--     <div class="game-item"> -->
+  <!--       <img src="https://images.unsplash.com/photo-1551103782-8ab07afd45c1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80" alt="Retro Quest" /> -->
+  <!--       <p>Retro Quest</p> -->
+  <!--       <span class="completion-badge">100%</span> -->
+  <!--     </div> -->
+  <!--     <div class="game-item"> -->
+  <!--       <img src="https://images.unsplash.com/photo-1545566239-0d774cb3a388?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80" alt="Space Odyssey" /> -->
+  <!--       <p>Space Odyssey</p> -->
+  <!--       <span class="completion-badge">87%</span> -->
+  <!--     </div> -->
+  <!--   </div> -->
+  <!-- </div> -->
+
+  <!-- Add Game Modal -->
+  <div class="modal-overlay" id="addGameModal">
+    <div class="add-game-modal">
+      <div class="game-preview">
+        <div class="default-image">Game Image Preview</div>
+      </div>
+      <div class="game-form">
+        <h3>Add New Game</h3>
+        <div class="form-group">
+          <label for="gameName">Game Name*</label>
+          <input 
+          type="text" 
+          id="gameName" 
+          placeholder="Enter game name" 
+          onchange="showAddGameModal(this.value)" 
+          required
+      />        </div>
+        <div class="form-group">
+          <label for="gamePath">Game Path*</label>
+          <input type="text" id="gamePath" placeholder="Enter local path to game" required>
+        </div>
+        <div class="form-actions">
+          <button class="cancel-btn" onclick="hideAddGameModal()">Cancel</button>
+          <button class="submit-btn" onclick="addGame()">Add Game</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div class="notification" id="notification">
+    <span class="notification-icon">ℹ️</span>
+    <span class="notification-message">Notification message</span>
+  </div>
+
+  <script   src="../js/gameDashboard.js"></script>
+</body>
+</html>

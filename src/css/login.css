@@ -1,0 +1,226 @@
+* {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Orbitron', 'Arial', sans-serif;
+}
+/* Custom Title Bar */
+.title-bar {
+    -webkit-app-region: drag;
+    height: 30px;
+    background-color: rgba(10, 15, 30, 0.9);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    color: #00ffff;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+.controls {
+    display: flex;
+    -webkit-app-region: no-drag;
+}
+.control-btn {
+    background: transparent;
+    border: none;
+    color: #00ffff;
+    font-size: 1rem;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.control-btn:hover {
+    background-color: rgba(0, 255, 255, 0.2);
+}
+#close-btn:hover {
+    background-color: #ff0000;
+    color: white;
+}
+/* Video Background */
+.game-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+}
+.background-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0.2;
+}
+/* Steam-style Layout */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 40px;
+}
+.login-box {
+    display: flex;
+    background-color: rgba(10, 15, 30, 0.85);
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+    width: 900px;
+    max-width: 90%;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    animation: glow 3s infinite alternate;
+    overflow: hidden;
+}
+@keyframes glow {
+    from { box-shadow: 0 0 15px -5px rgba(0, 255, 255, 0.5); }
+    to { box-shadow: 0 0 25px 5px rgba(0, 255, 255, 0.7); }
+}
+.form-section {
+    flex: 1;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.logo-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 40px;
+}
+.logo-container {
+    text-align: center;
+}
+.logo-container h1 {
+    color: #00ffff;
+    font-size: 3.5rem;
+    text-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+    margin-bottom: 20px;
+}
+.logo-container img {
+    max-width: 300px;
+    height: auto;
+}
+.input-group {
+    margin-bottom: 20px;
+}
+.input-group label {
+    display: block;
+    color: #00ffff;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+.input-group input {
+    width: 100%;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1rem;
+}
+.input-group input:focus {
+    outline: none;
+    border-color: #00ffff;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+.remember-me {
+    display: flex;
+    align-items: center;
+    color: #00ffff;
+    margin-bottom: 20px;
+}
+.remember-me input {
+    margin-right: 8px;
+    accent-color: #00ffff;
+}
+.login-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(45deg, #0066ff, #00ffff);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+}
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 255, 255, 0.4);
+}
+.signup-link {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+}
+.signup-link a {
+    color: #00ffff;
+    text-decoration: none;
+    font-weight: bold;
+}
+.signup-link a:hover {
+    text-decoration: underline;
+}
+@media (max-width: 768px) {
+    .login-box {
+        flex-direction: column;
+    }
+    .logo-section {
+        order: -1;
+        padding: 20px;
+    }
+    .logo-container h1 {
+        font-size: 2.5rem;
+    }
+}
+/*
+spiner loading 
+*/
+.loading-box {
+    background-color: rgba(10, 15, 30, 0.85);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 15px;
+    box-shadow: 0 0 25px 5px rgba(0, 255, 255, 0.3);
+    padding: 30px;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    animation: glow 3s infinite alternate;
+  }
+
+  @keyframes glow {
+    from { box-shadow: 0 0 15px -5px rgba(0, 255, 255, 0.5); }
+    to { box-shadow: 0 0 25px 5px rgba(0, 255, 255, 0.7); }
+  }
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(0, 255, 255, 0.3);
+    border-top: 5px solid #00ffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .message {
+    color: #00ffff;
+    font-size: 1rem;
+    margin-bottom: 15px;
+  }
