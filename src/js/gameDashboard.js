@@ -39,6 +39,8 @@ async function loadLocalGames() {
     if (jsonData.lastTimeSync) {
       lastSyncDiv.textContent = `Last synced: ${jsonData.lastTimeSync}`;
     }
+    // ADD THIS LINE HERE:
+    startBackgroundWatcher();
   } catch (error) {
     console.error("Failed to load local games:", error);
     showNotification("Error loading local repository", false);
@@ -768,3 +770,105 @@ document.addEventListener('click', (event) => {
     }
   }
 });
+// watch and save auto
+// ==========================================
+// --- BACKGROUND AUTO-SYNC ENGINE ---
+// ==========================================
+let activeWatchers = {}; 
+let syncTimeouts = {};   
+
+function startBackgroundWatcher() {
+  if (!gamesData) return;
+
+  gamesData.forEach(game => {
+    if (game.shouldSync === false) return; 
+
+    const fullPath = path.join(`C:/Users/${USERNAME}`, game.distLocal);
+    
+    if (fs.existsSync(fullPath)) {
+      if (activeWatchers[game.gameName]) return; 
+
+      try {
+        const watcher = fs.watch(fullPath, { recursive: true }, (eventType, filename) => {
+          if (filename && (filename.endsWith('.tmp') || filename.includes('cache'))) return;
+
+          console.log(`[Auto-Sync] Detected save activity in ${game.gameName}. Waiting 3 seconds...`);
+
+         // --- THE DEBOUNCE LOGIC ---
+        
+      // 1. If a countdown is already running, KILL IT.
+      if (syncTimeouts[game.gameName]) {
+        clearTimeout(syncTimeouts[game.gameName]);
+      }
+
+      // 2. Start a fresh 15-second (15000ms) countdown.
+      // This function will ONLY execute if no more files are changed before it hits zero.
+      syncTimeouts[game.gameName] = setTimeout(() => {
+        console.log(`[Auto-Sync] 15 seconds of silence. Uploading ${game.gameName}...`);
+        triggerSilentSync(game);
+      }, 15000);
+            });
+
+        activeWatchers[game.gameName] = watcher;
+        console.log(`👀 Now watching: ${game.gameName}`);
+        
+      } catch (error) {
+        console.error(`Failed to watch ${game.gameName}:`, error);
+      }
+    }
+  });
+}
+
+// THE NOTIFICATION TRIGGER (Make sure this isn't missing!)
+async function triggerSilentSync(game) {
+  console.log(`🚀 Spawning notification for ${game.gameName}`);
+  
+  ipcRenderer.send('show-custom-notification', {
+    title: game.gameName,
+    image: game.background_image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=100",
+    status: "Auto-syncing save data...",
+    isDone: false
+  });
+
+  try {
+    let storage = await initializeStorage(userInfo.email, userInfo.password, () => {});
+    await checkAndUploadGamesToCloud(storage, () => {});
+    
+    const localRepoPath = path.join(`C:/Users/${USERNAME}`, "localgameRepo.json");
+    gamesFileJson = await readJsonFile(localRepoPath);
+    gamesData = gamesFileJson.gamesCloud;
+    displayGames(gamesData);
+    
+    ipcRenderer.send('update-custom-notification', {
+      title: game.gameName,
+      status: "Save data secured in cloud.",
+      isDone: true
+    });
+    
+    await storage.close();
+  } catch (err) {
+    console.error(`Background sync failed for ${game.gameName}`, err);
+    ipcRenderer.send('update-custom-notification', {
+      title: game.gameName,
+      status: "Auto-sync failed. Retrying later.",
+      isDone: true
+    });
+  }
+}
+
+// THE UI TOGGLE BUTTON
+async function toggleSyncStatus(gameName) {
+  const game = gamesFileJson.gamesCloud.find(g => g.gameName === gameName);
+  
+  if (game) {
+    if (game.shouldSync === undefined) game.shouldSync = true;
+    game.shouldSync = !game.shouldSync;
+    
+    await writeJsonFile(`C:/Users/${USERNAME}/localgameRepo.json`, gamesFileJson);
+    gamesData = gamesFileJson.gamesCloud;
+    displayGames(gamesData);
+    
+    const statusText = game.shouldSync ? "enabled" : "disabled";
+    showNotification(`${gameName} sync ${statusText}. Restart app to apply.`, true);
+  }
+}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: 'Roboto', sans-serif;
+    }
+    .toast-container {
+      background: #171a21; /* Steam Dark Slate */
+      border: 1px solid #3d4450;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      gap: 15px;
+      width: 320px;
+      box-sizing: border-box;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+      /* Slide in from top animation */
+      animation: slideIn 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; 
+    }
+    .game-art {
+      width: 45px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 3px;
+    }
+    .text-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .title {
+      color: #66c0f4; /* Steam Blue */
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .status {
+      color: #8f98a0;
+      font-size: 12px;
+    }
+    /* The little loading spinner */
+    .spinner {
+      width: 12px; height: 12px;
+      border: 2px solid rgba(102, 192, 244, 0.2);
+      border-top: 2px solid #66c0f4;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    @keyframes slideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toast-container" id="toast">
+    <img id="game-img" src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=100&q=80" class="game-art">
+    <div class="text-content">
+      <div class="title" id="game-title">CloudGame</div>
+      <div class="status" id="game-status"><span class="spinner" id="spinner"></span> <span id="status-text">Uploading save data...</span></div>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    // Listen for updates from the main app
+    ipcRenderer.on('update-notification', (event, data) => {
+      if (data.image) document.getElementById('game-img').src = data.image;
+      if (data.title) document.getElementById('game-title').textContent = data.title;
+      if (data.status) document.getElementById('status-text').textContent = data.status;
+      
+      // Remove spinner if it's done or failed
+      if (data.isDone) {
+        document.getElementById('spinner').style.display = 'none';
+        document.getElementById('game-status').style.color = '#57cbff'; // Brighter blue on success
+      }
+    });
+  </script>
+</body>
+</html>
