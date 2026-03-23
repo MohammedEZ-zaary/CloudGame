@@ -1,8 +1,8 @@
 {
   "name": "cloudGames",
-  "version": "1.0.2",
+  "version": "1.2.0",
   "main": "main.js",
-  "author": "Mohammed Ez-Zaary mohamedzaariy@gmail.com",
+  "author": "Mohammed Ez-Zaary <mohamedzaariy@gmail.com>",
   "description": "A cloud gaming application built with Electron",
   "license": "MIT",
   "scripts": {
@@ -10,28 +10,32 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
-  "files": [
-    "main.js",
-    "package.json"
-  ],
   "build": {
     "appId": "com.cloudgame.app",
     "productName": "CloudGame",
+    "directories": {
+      "output": "release/" 
+    },
+    "files": [
+      "main.js",
+      "package.json",
+      "src/**/*",
+      ".env"
+    ],
     "win": {
       "target": "nsis",
-      "icon": "/src/assets/cloud-game.ico",
-      "publisherName": "Mohammed EZ-zaary",
-      "compression": "maximum"
+      "icon": "src/assets/cloud-game.ico",
+      "publisherName": "Mohammed EZ-zaary"
     },
     "mac": {
       "target": "dmg",
-      "icon": "/src/assets/cloud-game.ico",
+      "icon": "src/assets/cloud-game.icns",
       "category": "public.app-category.games",
       "hardenedRuntime": true
     },
     "linux": {
       "target": "AppImage",
-      "icon": "assets/icon.png",
+      "icon": "src/assets/icon.png",
       "category": "Game"
     }
   },
