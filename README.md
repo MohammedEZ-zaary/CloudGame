@@ -1,5 +1,4 @@
 # CloudGame – Mega-Powered Game Save Sync for Windows  
-
 ![CloudGame Logo](./readme_images/logo.PNG) 
 
 Manuly back up and sync game saves to **Mega.nz**—perfect for non-Steam games or multi-PC setups.  
