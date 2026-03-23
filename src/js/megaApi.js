@@ -22,7 +22,7 @@ async function initializeStorage(email, password,  status) {
     });
 
     await storage.ready; // Wait for storage to be ready
-    status("\u2705 " + storage.name + " Login successfully");
+    status("Authentication successful: " + storage.name);
     await createStorageBase(storage , status)
     return storage;
 }
@@ -30,6 +30,27 @@ async function initializeStorage(email, password,  status) {
 function getFileSize(path) {
   return fs.statSync(path).size; // Directly return size
 }
+
+// NEW: Gets the true last modified time of a game folder
+function getLatestModifiedTime(dirPath) {
+  if (!fs.existsSync(dirPath)) return 0;
+  
+  let latestTime = fs.statSync(dirPath).mtimeMs;
+  
+  // Do a quick shallow scan of the files inside to find the newest save
+  const files = fs.readdirSync(dirPath);
+  for (const file of files) {
+    const fullPath = PATH.join(dirPath, file);
+    try {
+      const stat = fs.statSync(fullPath);
+      if (stat.isFile() && stat.mtimeMs > latestTime) {
+        latestTime = stat.mtimeMs;
+      }
+    } catch (e) { /* Ignore locked files */ }
+  }
+  return latestTime;
+}
+
 async function createStorageBase(storage , status){
     const cloudGameFolder = await storage.root.find("CloudGameSaver");
     if(cloudGameFolder != null){
@@ -37,8 +58,7 @@ async function createStorageBase(storage , status){
     }
 
     if(cloudGameFolder == null){
-
-    status("\u2705 " + " creat CloudGameSaver Folder");
+      status("Initializing remote storage directory...");
       await storage.root.mkdir("CloudGameSaver")
     }
 
@@ -51,7 +71,7 @@ async function createStorageBase(storage , status){
         "time": ""
       }))
 
-      status("\u2705 " + " create localgameRepo.json File");
+      status("Creating local database configuration...");
     }
 }
 
@@ -69,27 +89,32 @@ async function uploadFile(storage, filePath, fileName , message = "") {
     }
     return file;
   } catch (error) {
-    console.error("\u274C Upload failed:", error);
+    console.error("Upload failed:", error);
     throw error; // Re-throw to handle in caller
   }
 }
 
-
+// async function zipFolder(sourceFolder, outputPath) { ... }
 async function zipFolder(sourceFolder, outputPath) {
   const output = fs.createWriteStream(outputPath);
-  const archive = archiver('zip', { zlib: { level: 9 } }); // Maximum compression
+  const archive = archiver('zip', { zlib: { level: 9 } });
 
   return new Promise((resolve, reject) => {
-    output.on('close', () => {
-      resolve(outputPath);
-    });
-
+    output.on('close', () => resolve(outputPath));
     archive.on('error', (err) => reject(err));
+    
     archive.pipe(output);
-    archive.directory(sourceFolder, false); // Second param 'false' preserves folder structure
+    
+    // THE BOTTLENECK FIX: Ignores common heavy/useless folders
+    archive.glob('**/*', {
+      cwd: sourceFolder,
+      ignore: ['**/Screenshots/**', '**/logs/**', '**/cache/**', '**/CrashReports/**'] 
+    });
+    
     archive.finalize();
   });
 }
+
 async function unzipFolder(zipPath, outputFolder) {
   try {
     const zip = new AdmZip(zipPath);
@@ -100,6 +125,7 @@ async function unzipFolder(zipPath, outputFolder) {
     throw err;
   }
 }
+
 function date(){
   const date = new Date();
   const day = date.getDate();
@@ -135,27 +161,28 @@ async function downloadCloudGameSaver(storage, fileName, disPath, downloadedFile
           resolve(true);
         })
         .on("error", (err) => {
-          console.error(`❌ Sync failed: ${err}`);
+          console.error(`Sync failed: ${err}`);
           reject(err);
         });
     } catch (err) {
-      console.error(`❌ Error in downloadCloudGameSaver: ${err}`);
+      console.error(`Error in downloadCloudGameSaver: ${err}`);
       reject(err);
     }
   });
 }
+
 async function syncGames(storage ,  status){
   // check if localgameRepo.json exsite
   if (fs.existsSync(PATH.join("C:" , "Users"  , USERNAME , "localgameRepo.json")) != true){
-     status("\u26A0 localgameRepo.json not founded")
+     status("Local database missing. Fetching from cloud...")
     if(await downloadCloudGameSaver(storage , "cloudgameRepo.json" , PATH.join("C:" , "Users" , USERNAME) , "localgameRepo.json")){
-     status("\u2705 localgameRepo.json downloaded successfully!")
+     status("Local database synchronized.")
     }else {
-       status("\u274C  localgameRepo.json download faild")
+       status("Error: Failed to fetch remote database.")
     }
   }
-
 };
+
 async function  readJsonFile(path) {
   const jsonFile =  await fsP.readFile(path, "utf-8"); 
   const jsonData =  JSON.parse(jsonFile);
@@ -175,73 +202,171 @@ function deleteFile(storage, fileName) {
     }
   });
 }
-async function checkAndUploadGamesToCloud(storage ,  status) {
+
+// async function checkAndUploadGamesToCloud(storage ,  status) { ... }
+async function checkAndUploadGamesToCloud(storage, status) {
+  status("Scanning local saves and verifying Cloud data...");
+  const localRepoPath = PATH.join(localUserProfileName, "localgameRepo.json");
+  const jsonData = await readJsonFile(localRepoPath);
   
-  //console.log("🔄 Start Synchrouniz Games")
-  status("🔄 Start Synchrouniz Games")
-  const jsonData = await readJsonFile(PATH.join("C:" , "Users" , USERNAME , "localgameRepo.json"))
+  // NEW: Get a list of files actually sitting on Mega right now
+  const cloudGameFolder = await storage.root.find("CloudGameSaver");
+  const cloudFiles = cloudGameFolder.children ? cloudGameFolder.children.map(f => f.name) : [];
+  
   const results = await Promise.all(
     jsonData.gamesCloud.map(async (game) => {
-      if(game.shouldSync == false){
-          // if use for example delet the game hand he does not want to sync it anymore 
-          return game 
-        }
-        if(game.isFileUploaded == false || game.lastTimeEdit != date()){
-          if(fs.existsSync(PATH.join(localUserProfileName , game.distLocal)) ==  true){
-          try{
-            const fileZip = await zipFolder(PATH.join(localUserProfileName , game.distLocal) , "./" + game.gameCloudName + ".zip")
-            // delete the old file and upload the new one
-            await deleteFile(storage , game.gameCloudName + ".zip");
-            await uploadFile(storage , PATH.join("./" , game.gameCloudName +".zip"),game.gameCloudName + ".zip");
+      if (game.shouldSync == false) return game;
+
+      const fullLocalPath = PATH.join(localUserProfileName, game.distLocal);
+      
+      if (fs.existsSync(fullLocalPath)) {
+        const localMTime = getLatestModifiedTime(fullLocalPath);
+        const zipName = game.gameCloudName + ".zip";
+        
+        // NEW: Does this file ACTUALLY exist on Mega right now?
+        const isMissingOnCloud = !cloudFiles.includes(zipName);
+        
+        // NEW: Fixes the bug if your old JSON still uses the string "22-3-2026"
+        const isOldDateFormat = typeof game.lastTimeEdit === 'string';
+        
+        // Force an upload IF: 
+        if (game.isFileUploaded == false || isMissingOnCloud || isOldDateFormat || localMTime > (game.lastTimeEdit || 0)) {
+          try {
+            status(`Compressing and uploading: ${game.gameName}...`);
+            const zipPath = "./" + zipName;
             
+            await zipFolder(fullLocalPath, zipPath);
+            await deleteFile(storage, zipName); // Fails safely if it doesn't exist
+            await uploadFile(storage, zipPath, zipName);
+            
+            // Set to exact millisecond
             game.isFileUploaded = true;
-            game.lastTimeEdit = date();
-            fs.rm(fileZip , (error) => {
-              if(error){
-              }
-            }
-          );
-          }catch (error){
+            game.lastTimeEdit = localMTime; 
+            
+            fs.promises.rm(zipPath).catch(() => {}); // Cleanup
+            status(`${game.gameName} backed up successfully.`);
+          } catch (error) {
+            console.error(`Failed to upload ${game.gameName}`, error);
             game.isFileUploaded = false;
           }
-    
-        }else{
-
-          status(`${game.gameName} Not found the Path`)
-        }; 
+        }
+      } else {
+        status(`Skipped ${game.gameName}: Local path unavailable.`);
       }
       return game;
-      })
-  )
+    })
+  );
 
-  jsonData.gamesCloud =  results ;
+  jsonData.gamesCloud = results;
+  jsonData.lastTimeSync = Date.now(); 
+  fs.writeFileSync(localRepoPath, JSON.stringify(jsonData, null, 2));
 
-    jsonData.lastTimeSync = date()
-    // save data in local file 
-    fs.writeFileSync(PATH.join(localUserProfileName , "localgameRepo.json") , JSON.stringify(jsonData))
-    // update cloud file by delete the cloud file and upload the local file as cloud file 
-    await deleteFile(storage,"cloudgameRepo.json");
-    // upload 
-    await uploadFile(storage,PATH.join(localUserProfileName , "localgameRepo.json") , "cloudgameRepo.json","\u2705 cloudgameRepo.json update successfully!") ;
+  // Update Master List
+  status("Updating Cloud Master List...");
+  const tempName = "cloudgameRepo_temp.json";
+  
+  try {
+    await uploadFile(storage, localRepoPath, tempName);
+    await deleteFile(storage, "cloudgameRepo.json"); 
+    
+    // Rename temp to master
+    const updatedCloudFolder = await storage.root.find("CloudGameSaver");
+    const tempNode = updatedCloudFolder.children.find(item => item.name === tempName);
+    if (tempNode) await tempNode.rename("cloudgameRepo.json");
+    
+    status("Synchronization Complete.");
+  } catch (error) {
+    status("Sync finished with warnings: Master list update failed.");
+  }
 }
-async function checkIfGameFileExisteInComputer(storage , status){
-  // if not download it from cloud
-  const jsonData = await  readJsonFile(PATH.join(localUserProfileName , "localgameRepo.json"))
-  const res = await Promise.all(
-    jsonData.gamesCloud.map(async (game) => {
-    if(fs.existsSync(PATH.join(localUserProfileName , game.distLocal)) ==  false){
-      status(`Sync ${game.gameCloudName}.zip`)
-      await downloadCloudGameSaver(storage , game.gameCloudName + ".zip" , "./");
 
-        status(`Sync extract file ${game.gameCloudName}.zip`)
-        await unzipFolder("./" +game.gameCloudName + ".zip" , PATH.join(localUserProfileName , game.distLocal ));
-        
-        fs.promises.rm("./" +game.gameCloudName + ".zip");
-        status(`Sync Remove file ${game.gameCloudName}.zip`)
+// async function checkIfGameFileExisteInComputer(storage , status){ ... }
+async function checkIfGameFileExisteInComputer(storage, status) {
+  const localRepoPath = PATH.join(localUserProfileName, "localgameRepo.json");
+  const jsonData = await readJsonFile(localRepoPath);
+  let jsonNeedsUpdate = false;
+
+  // NEW: Check MEGA directly to see what files ACTUALLY exist right now
+  const cloudGameFolder = await storage.root.find("CloudGameSaver");
+  const cloudFiles = cloudGameFolder && cloudGameFolder.children ? cloudGameFolder.children.map(f => f.name) : [];
+
+  await Promise.all(
+    jsonData.gamesCloud.map(async (game) => {
+      // Skip if the user turned off sync for this game
+      if (game.shouldSync == false) return; 
+
+      const fullLocalPath = PATH.join(localUserProfileName, game.distLocal);
+      const zipName = game.gameCloudName + ".zip";
+      
+      // NEW: Does this game's zip file exist on MEGA right now?
+      const existsOnCloud = cloudFiles.includes(zipName);
+      let needsDownload = false;
+
+      // SCENARIO A: Folder is missing locally, but safe on MEGA -> DOWNLOAD IT
+      if (!fs.existsSync(fullLocalPath) && existsOnCloud) {
+        needsDownload = true;
+      } 
+      // SCENARIO B: Folder exists locally, but MEGA has a newer version -> DOWNLOAD IT
+      else if (fs.existsSync(fullLocalPath) && existsOnCloud) {
+        const localMTime = getLatestModifiedTime(fullLocalPath);
+        if ((game.lastTimeEdit || 0) > localMTime) {
+          needsDownload = true; 
+        }
+      }
+
+      if (needsDownload) {
+        status(`Restoring save data for: ${game.gameName}...`);
+        try {
+          await downloadCloudGameSaver(storage, zipName, "./");
+          status(`Extracting archive: ${game.gameName}...`);
+          
+          await unzipFolder("./" + zipName, fullLocalPath);
+          fs.promises.rm("./" + zipName).catch(() => {});
+          
+          // FIX THE LIMBO: Force the JSON to remember it is safely uploaded
+          game.isFileUploaded = true;
+          jsonNeedsUpdate = true;
+          
+          status(`${game.gameName} restored to local machine.`);
+        } catch (error) {
+          console.error(`Failed to restore ${game.gameName}`, error);
+          status(`Error: Failed to download ${game.gameName}.`);
+        }
       }
     })
   );
 
+  // If we fixed any limbo states, save the JSON so the UI updates!
+  if (jsonNeedsUpdate) {
+    fs.writeFileSync(localRepoPath, JSON.stringify(jsonData, null, 2));
+  }
+}
+
+// NEW: Generates a shareable download link for a specific file
+async function getShareLink(storage, fileName) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const cloudGameFolder = await storage.root.find("CloudGameSaver");
+      
+      if (!cloudGameFolder) {
+        return reject("CloudGameSaver folder not found.");
+      }
+
+      const targetNode = cloudGameFolder.children.find((item) => item.name === fileName);
+
+      if (!targetNode) {
+        return reject("File not found on cloud.");
+      }
+
+      // Ask MEGA to generate the URL
+      const link = await targetNode.link();
+      resolve(link);
+      
+    } catch (error) {
+      console.error(`Error generating link: ${error}`);
+      reject(error);
+    }
+  });
 }
 
 module.exports = {
@@ -250,7 +375,6 @@ module.exports = {
   initializeStorage : initializeStorage ,
   checkAndUploadGamesToCloud : checkAndUploadGamesToCloud,
   checkIfGameFileExisteInComputer : checkIfGameFileExisteInComputer,
-  createStorageBase : createStorageBase
-  
+  createStorageBase : createStorageBase,
+  getShareLink: getShareLink // <-- ADD THIS LINE
 };
-

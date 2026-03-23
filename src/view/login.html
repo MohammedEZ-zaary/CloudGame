@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudGame</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap">
+    <title>CloudGame Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/login.css">
-    
 </head>
 <body>
-    <!-- Video Background -->
+    <div id="intro-overlay" class="intro-overlay">
+        <div class="intro-logo-container">
+            <div class="intro-glow"></div>
+            <h1 class="intro-text">CloudGame</h1>
+        </div>
+    </div>
     <div class="game-background">
         <video autoplay muted loop playsinline class="background-video">
             <source src="../videos/background.mp4" type="video/mp4">
@@ -17,9 +21,8 @@
         </video>
     </div>
 
-    <!-- Custom Title Bar -->
     <div class="title-bar">
-        <div class="title">CloudGame</div>
+        <div class="title">CLOUDGAME LOGIN</div>
         <div class="controls">
             <button id="minimize-btn" class="control-btn">−</button>
             <button id="maximize-btn" class="control-btn">□</button>
@@ -27,20 +30,20 @@
         </div>
     </div>
    
-    <!-- Login Container -->
     <div class="login-container">
         <div class="login-box">
-            <!-- Form Section (Left) -->
             <div id="form-section" class="form-section">
                 <form id="loginForm">
+                    <h2 style="color: #fff; margin-bottom: 25px; font-weight: 300; font-size: 1.5rem;">SIGN IN</h2>
+                    
                     <div class="input-group">
                         <label for="email">MEGA EMAIL</label>
-                        <input type="email" id="email" placeholder="Enter your MEGA email" required>
+                        <input type="email" id="email" required>
                     </div>
                     
                     <div class="input-group">
                         <label for="password">MEGA PASSWORD</label>
-                        <input type="password" id="password" placeholder="Enter your MEGA password" required>
+                        <input type="password" id="password" required>
                     </div>
                     
                     <div class="remember-me">
@@ -48,27 +51,23 @@
                         <label for="remember">Remember me</label>
                     </div>
                     
-                    <button type="submit" class="login-btn">LOGIN WITH MEGA</button>
+                    <button type="submit" class="login-btn">Sign In</button>
                     
                     <div class="signup-link">
-                        Don't have a MEGA account? <a href="https://mega.nz/register" target="_blank">Create one</a>
+                        Don't have a MEGA account? <a href="https://mega.nz/register" target="_blank">Create a free account</a>
                     </div>
                 </form>
             </div>
 
-            <!-- Logo Section (Right) -->
             <div class="logo-section">
                 <div class="logo-container">
                     <h1>CloudGame</h1>
-                    <p style="color: rgba(255, 255, 255, 0.7);">Save your progress game in cloud</p>
-                    <!-- If you have a logo image: -->
-                    <!-- <img src="./assets/logo.png" alt="CloudGame Logo"> -->
+                    <p>Secure Cloud Saves for PC</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- <script src="../js/megaApi.js"></script> -->
     <script src="../js/login.js"></script>
 </body>
 </html>

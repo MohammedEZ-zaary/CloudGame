@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: transparent;
+            overflow: hidden;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .intro-logo-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 300px;
+            height: 300px;
+        }
+
+        /* 1. Deep Core Glow */
+        .intro-glow {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(102, 192, 244, 0.8) 0%, rgba(27, 40, 56, 0) 70%);
+            border-radius: 50%;
+            animation: corePulse 3.5s ease-in-out forwards;
+            z-index: 1;
+        }
+
+        /* 2. Outer Spinning Ring */
+        .ring-outer {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border: 2px solid transparent;
+            border-top: 2px solid rgba(102, 192, 244, 0.5);
+            border-bottom: 2px solid rgba(102, 192, 244, 0.5);
+            border-radius: 50%;
+            animation: spinRight 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+            z-index: 2;
+        }
+
+        /* 3. Inner Spinning Ring */
+        .ring-inner {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            border: 2px dashed rgba(102, 192, 244, 0.3);
+            border-radius: 50%;
+            animation: spinLeft 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+            z-index: 2;
+        }
+
+        /* 4. Cinematic Text Reveal */
+        .intro-text {
+            color: #fff;
+            font-size: 3.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            z-index: 3;
+            opacity: 0;
+            animation: cinematicReveal 3.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            text-shadow: 0 0 20px rgba(102, 192, 244, 0.8);
+            position: absolute;
+        }
+
+        /* 5. Terminal Loading Text */
+        .status-text {
+            position: absolute;
+            bottom: 20%;
+            color: rgba(102, 192, 244, 0.7);
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            font-family: monospace;
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeInOut 3.5s ease-in-out forwards;
+        }
+
+        /* --- KEYFRAMES --- */
+        @keyframes corePulse {
+            0% { transform: scale(0.5); opacity: 0; filter: blur(10px); }
+            30% { transform: scale(4); opacity: 1; filter: blur(20px); }
+            80% { transform: scale(4.5); opacity: 0.8; filter: blur(20px); }
+            100% { transform: scale(6); opacity: 0; filter: blur(30px); }
+        }
+
+        @keyframes spinRight {
+            0% { transform: rotate(0deg) scale(0.5); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: rotate(360deg) scale(1.5); opacity: 0; }
+        }
+
+        @keyframes spinLeft {
+            0% { transform: rotate(0deg) scale(0.5); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: rotate(-360deg) scale(1.5); opacity: 0; }
+        }
+
+        @keyframes cinematicReveal {
+            0% { opacity: 0; transform: scale(1.5); letter-spacing: -10px; filter: blur(20px); }
+            30% { opacity: 1; transform: scale(1); letter-spacing: 5px; filter: blur(0px); }
+            80% { opacity: 1; transform: scale(1.02); letter-spacing: 8px; filter: blur(0px); }
+            100% { opacity: 0; transform: scale(1.1); letter-spacing: 15px; filter: blur(15px); }
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            15% { opacity: 1; }
+            85% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <audio id="boot-sound" src="../assets/startup.mp3" preload="auto"></audio>
+
+    <div class="intro-logo-container">
+        <div class="intro-glow"></div>
+        <div class="ring-outer"></div>
+        <div class="ring-inner"></div>
+        <h1 class="intro-text">CloudGame</h1>
+    </div>
+    
+    <div class="status-text" id="status">Initializing Engine...</div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        // 2. PLAY THE SOUND AS SOON AS THE SCRIPT LOADS
+        const bootSound = document.getElementById('boot-sound');
+        bootSound.volume = 0.5; // Set volume to 50% so it's not deafening
+        bootSound.play().catch(e => console.log("Audio play failed:", e));
+
+        // Fake terminal sequence
+        const statusEl = document.getElementById('status');
+        const messages = [
+            "Initializing Core Engine...",
+            "Establishing Secure Connection...",
+            "Syncing User Preferences...",
+            "Mounting Cloud Drive...",
+            "Ready."
+        ];
+
+        let msgIndex = 0;
+        const typingInterval = setInterval(() => {
+            msgIndex++;
+            if (msgIndex < messages.length) {
+                statusEl.innerText = messages[msgIndex];
+            } else {
+                clearInterval(typingInterval);
+            }
+        }, 500);
+
+        // Tell main process to close splash and show login
+        setTimeout(() => {
+            ipcRenderer.send('intro-finished');
+        }, 3600);
+    </script>
+</body>
+</html>

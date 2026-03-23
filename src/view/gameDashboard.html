@@ -3,107 +3,193 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Neon Game Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+  <title>CloudGame Library</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/gameDashboard.css">
 </head>
 <body>
-   <!-- Custom Title Bar -->
-    <div class="title-bar">
-        <div class="title">CloudGame</div>
-        <div class="controls">
-            <button id="minimize-btn" class="control-btn">−</button>
-            <button id="maximize-btn" class="control-btn">□</button>
-            <button id="close-btn" class="control-btn">×</button>
-        </div>
+  <div class="title-bar">
+    <div class="title-left">
+      <div class="title">CLOUDGAME</div>
+      <div class="menu-items active">LIBRARY</div>
     </div>
-  <!-- Left Panel -->
-  <div class="left-panel">
-    <div class="panel-header">
-      <h2>🎮 Game Library</h2>
-      <div class="last-sync" id="last-sync"></div>
-    </div>
-    <div class="game-library-container">
-      <div class="game-library" id="gameLibrary"></div>
-    </div>
-
-    <div class="sync-section">
-      <button onclick="syncGames()">
-        <span class="sync-icon">🔄</span> SYNC LIBRARY
-      </button>
-      <button onclick="showAddGameModal()">
-        <span class="sync-icon">➕</span> ADD GAME
-      </button>
+    <div class="controls">
+      <button id="minimize-btn" class="control-btn">−</button>
+      <button id="maximize-btn" class="control-btn">□</button>
+      <button id="close-btn" class="control-btn">×</button>
     </div>
   </div>
 
-  <!-- Right Panel -->
-  <div class="right-panel">
-    <div class="account-info">
-      <h2>👤 My Account</h2>
-      <div class="account-details">
+  <div class="app-container">
+    <div class="sidebar">
+      <div class="account-info">
         <div class="avatar">NP</div>
         <div class="user-info">
-          <p id="username" class="username"></p>
+          <p id="username" class="username">Player</p>
         </div>
       </div>
+      
+      <div class="sidebar-actions">
+        <button class="action-btn primary" onclick="syncGames()">
+          <svg class="icon sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-10.09l5.67-5.67"/>
+          </svg>
+          <span>Sync Library</span>
+        </button>
+
+        <button class="action-btn" onclick="showAddGameModal()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Add a Game</span>
+        </button>
+
+        <button class="action-btn" onclick="openScanner()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span>Auto-Scan PC</span>
+        </button>
+
+      </div>
+<div class="sync-status-container">
+  <div class="status-header">
+    <svg id="status-icon" class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.39 0 4.56.94 6.18 2.46L21 6v6h-6"/>
+    </svg>
+    <span class="status-label">SYSTEM STATUS</span>
+  </div>
+  <div class="sync-status-text" id="last-sync">Initializing...</div>
+</div><div class="sidebar-footer">
+  <div class="footer-label">DEVELOPER</div>
+  <div class="social-links">
+    <a href="https://github.com/MohammedEZ-zaary" class="social-icon-btn github" title="GitHub Source">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.841 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    </a>
+    <a href="https://instagram.com/zaarymohamed/" class="social-icon-btn instagram" title="Instagram">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+    </a>
+    <a href="https://www.youtube.com/@bestcodepractice7898" class="social-icon-btn youtube" title="YouTube Channel">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+    </a>
+  
+<a href="https://www.paypal.me/mohammedezzaary" class="social-icon-btn paypal" title="Donate via PayPal">
+  <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20.067 8.478c.492 8.813-7.277 13.118-13.046 13.118H2.082c-.445 0-.766-.361-.69-.805L4.17 3.36c.075-.444.478-.804.923-.804h7.185c2.522 0 4.514.543 5.702 1.628 1.188 1.084 1.702 2.58 1.542 4.31-.132 1.425-.63 2.55-1.455 3.385.492-.236.945-.521 1.344-.853.4-.332.738-.722.955-1.148zM15.46 8.412c.112-1.21-.248-2.181-1.077-2.914-.83-.734-2.152-1.101-3.965-1.101H6.606l-1.35 8.1c0 .445.361.805.805.805h1.95c.445 0 .766-.361.841-.805l.285-1.71c.075-.444.477-.804.922-.804h1.575c1.883 0 3.32-.456 4.102-1.368.782-.912.92-2.103.805-3.303z"/>
+  </svg>
+</a>
+  </div>
+</div>
     </div>
 
-  <!--   <div class="completed-games"> -->
-  <!--     <h2>✅ Completed Games</h2> -->
-  <!--     <div class="game-item"> -->
-  <!--       <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80" alt="Cyber Game" /> -->
-  <!--       <p>Cyber Adventure</p> -->
-  <!--       <span class="completion-badge">100%</span> -->
-  <!--     </div> -->
-  <!--     <div class="game-item"> -->
-  <!--       <img src="https://images.unsplash.com/photo-1551103782-8ab07afd45c1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80" alt="Retro Quest" /> -->
-  <!--       <p>Retro Quest</p> -->
-  <!--       <span class="completion-badge">100%</span> -->
-  <!--     </div> -->
-  <!--     <div class="game-item"> -->
-  <!--       <img src="https://images.unsplash.com/photo-1545566239-0d774cb3a388?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80" alt="Space Odyssey" /> -->
-  <!--       <p>Space Odyssey</p> -->
-  <!--       <span class="completion-badge">87%</span> -->
-  <!--     </div> -->
-  <!--   </div> -->
-  <!-- </div> -->
+    <div class="main-content">
+      <div class="panel-header">
+        <h2>ALL GAMES</h2>
+        <div class="view-controls">
+           <span class="game-count" id="game-count">0/0</span>
+        </div>
+      </div>
+      
+      <div class="game-library-container">
+        <div class="game-library" id="gameLibrary">
+          </div>
+      </div>
+    </div>
+  </div>
 
-  <!-- Add Game Modal -->
   <div class="modal-overlay" id="addGameModal">
-    <div class="add-game-modal">
-      <div class="game-preview">
-        <div class="default-image">Game Image Preview</div>
+    <div class="modal-box">
+      <h3>Add a Non-Store Game</h3>
+      <div class="form-group">
+        <label>Game Designation</label>
+        <input type="text" id="gameName" placeholder="e.g. Elden Ring" />
       </div>
-      <div class="game-form">
-        <h3>Add New Game</h3>
-        <div class="form-group">
-          <label for="gameName">Game Name*</label>
-          <input 
-          type="text" 
-          id="gameName" 
-          placeholder="Enter game name" 
-          onchange="showAddGameModal(this.value)" 
-          required
-      />        </div>
-        <div class="form-group">
-          <label for="gamePath">Game Path*</label>
-          <input type="text" id="gamePath" placeholder="Enter local path to game" required>
-        </div>
-        <div class="form-actions">
-          <button class="cancel-btn" onclick="hideAddGameModal()">Cancel</button>
-          <button class="submit-btn" onclick="addGame()">Add Game</button>
-        </div>
+      <div class="form-group">
+        <label>Target Path</label>
+        <input type="text" id="gamePath" placeholder="C:\Games\..." />
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel" onclick="hideAddGameModal()">CANCEL</button>
+        <button class="btn-submit" onclick="addGame()">ADD SELECTED PROGRAM</button>
       </div>
     </div>
   </div>
 
-  <!-- Notification -->
-  <div class="notification" id="notification">
-    <span class="notification-icon">ℹ️</span>
-    <span class="notification-message">Notification message</span>
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal-box share-box">
+      <h3>Share Game Save</h3>
+      <p style="color: #8f98a0; font-size: 0.9rem; margin-bottom: 15px;">Copy this link to share your cloud save with a friend.</p>
+      <div class="share-input-group">
+        <input type="text" id="shareLinkInput" readonly />
+        <button onclick="copyShareLink()">Copy</button>
+      </div>
+      <div class="form-actions" style="margin-top: 20px;">
+        <button class="btn-cancel" onclick="document.getElementById('shareModal').classList.remove('active')">CLOSE</button>
+      </div>
+    </div>
   </div>
 
-  <script   src="../js/gameDashboard.js"></script>
+  <div class="modal-overlay" id="scanModal">
+    <div class="modal-box" style="width: 600px; max-height: 80vh; display: flex; flex-direction: column;">
+      <h3 style="display: flex; align-items: center; gap: 10px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; color: var(--steam-blue);">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        Scan for Game Saves
+      </h3>
+      <p style="color: #8f98a0; font-size: 0.9rem; margin-bottom: 15px;">Scanning common save locations (Documents, AppData, Saved Games)...</p>
+      
+      <div id="scanLoader" style="text-align: center; padding: 20px; display: none;">
+        <div class="spinner" style="width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--steam-blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        <p style="margin-top: 10px; color: var(--steam-blue);">Scanning drives...</p>
+      </div>
+
+      <div class="scan-results" id="scanResults" style="flex: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 4px; border: 1px solid #171a21; padding: 10px;">
+        </div>
+
+      <div class="form-actions" style="margin-top: 20px;">
+        <button class="btn-cancel" onclick="document.getElementById('scanModal').classList.remove('active')">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="gameDetailsModal">
+    <div class="modal-box details-box">
+      <button class="close-details-btn" onclick="hideGameDetails()">×</button>
+      
+      <div class="details-hero" id="detailsHero">
+        <div class="hero-gradient"></div>
+      </div>
+      
+      <div class="details-content">
+        <h2 id="detailsTitle">Game Title</h2>
+        
+        <div class="details-meta">
+          <span class="meta-tag rating" id="detailsRating" style="display: flex; align-items: center; gap: 4px;">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width: 14px; height: 14px; color: #f1c40f;">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            0.0
+          </span>
+          <span class="meta-tag status" id="detailsStatus">Syncing</span>
+        </div>
+        
+        <div class="details-info-row">
+          <strong>Local Target:</strong> <span id="detailsPath">C:/...</span>
+        </div>
+        
+        <div class="details-genres" id="detailsGenres">
+          </div>
+        
+        <div class="details-actions">
+          <button class="btn-submit btn-launch" onclick="hideGameDetails()">CLOSE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="../js/gameDashboard.js"></script>
 </body>
 </html>
