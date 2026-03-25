@@ -1,4 +1,5 @@
 const {USERNAME} = require("../js/megaApi");
+const CommunityService = require('../js/communityService');
 const {readJsonFile, writeJsonFile} = require("../js/jsonMethods")
 const {ipcRenderer} = require("electron");
 const {existsSync} = require("node:original-fs");
@@ -22,6 +23,8 @@ let gamesData = [];
 let gamesFileJson;
 let userDataPath;
 let userInfo;
+let activeWatchers = {}; 
+let syncTimeouts = {}; 
 
 // --- 1. INITIALIZATION & DATA LOADING ---
 async function loadLocalGames() {
@@ -36,6 +39,8 @@ async function loadLocalGames() {
     gamesData = jsonData.gamesCloud;
     displayGames(gamesData);
     
+    // ADD THIS LINE RIGHT HERE:
+    applySavedSettings();
     if (jsonData.lastTimeSync) {
       lastSyncDiv.textContent = `Last synced: ${jsonData.lastTimeSync}`;
     }
@@ -661,48 +666,51 @@ const prompt = `
 }
 
 // Listen to the Game Name input field
-document.getElementById('gameName').addEventListener('blur', async (e) => {
-  const typedName = e.target.value.trim();
-  const pathInput = document.getElementById('gamePath');
-  
-  if (!typedName || pathInput.value !== "") return;
+const gameNameInput = document.getElementById('gameName');
 
-  const originalVal = e.target.value;
-  e.target.value = "Auto-detecting...";
+if (gameNameInput) {
+  gameNameInput.addEventListener('blur', async (e) => {
+    const typedName = e.target.value.trim();
+    const pathInput = document.getElementById('gamePath');
+    
+    if (!typedName || pathInput.value !== "") return;
 
-  try {
-    const aiData = await getSmartGameData(typedName);
+    const originalVal = e.target.value;
+    e.target.value = "Auto-detecting...";
 
-    if (aiData) {
-      e.target.value = aiData.correctedName;
-      let foundPath = false;
-      
-      for (let templatePath of aiData.paths) {
-        const cleanTemplate = templatePath.replace(/\\\\/g, '\\'); 
-        const actualLocalPath = resolveWindowsPath(cleanTemplate);
+    try {
+      const aiData = await getSmartGameData(typedName);
+
+      if (aiData) {
+        e.target.value = aiData.correctedName;
+        let foundPath = false;
         
-        if (fs.existsSync(actualLocalPath)) {
-          pathInput.value = actualLocalPath; 
-          foundPath = true;
-          showNotification(`Found save data for ${aiData.correctedName}!`, true);
-          break; 
+        for (let templatePath of aiData.paths) {
+          const cleanTemplate = templatePath.replace(/\\\\/g, '\\'); 
+          const actualLocalPath = resolveWindowsPath(cleanTemplate);
+          
+          if (fs.existsSync(actualLocalPath)) {
+            pathInput.value = actualLocalPath; 
+            foundPath = true;
+            showNotification(`Found save data for ${aiData.correctedName}!`, true);
+            break; 
+          }
         }
-      }
 
-      if (!foundPath) {
-        showNotification("Could not find default save path. Please enter manually.", false);
+        if (!foundPath) {
+          showNotification("Could not find default save path. Please enter manually.", false);
+        }
+      } else {
+        // If AI returns null (error), safely revert the text
+        e.target.value = originalVal;
       }
-    } else {
-      // If AI returns null (error), safely revert the text
+    } catch (err) {
+      // If a massive crash happens, safely revert the text
+      console.error("Fatal error in AI auto-fill:", err);
       e.target.value = originalVal;
     }
-  } catch (err) {
-    // If a massive crash happens, safely revert the text
-    console.error("Fatal error in AI auto-fill:", err);
-    e.target.value = originalVal;
-  }
-});
-
+  });
+}
 // --- AI SCANNER FILTER ---
 async function filterGameFoldersWithAI(folderNamesList) {
   // If no folders were found, just return empty
@@ -771,11 +779,8 @@ document.addEventListener('click', (event) => {
   }
 });
 // watch and save auto
-// ==========================================
-// --- BACKGROUND AUTO-SYNC ENGINE ---
-// ==========================================
-let activeWatchers = {}; 
-let syncTimeouts = {};   
+let isSyncRunning = false;   // NEW: Prevents MEGA API from overlapping
+let syncQueue = [];          // NEW: Lines up games to sync one by one
 
 function startBackgroundWatcher() {
   if (!gamesData) return;
@@ -783,31 +788,34 @@ function startBackgroundWatcher() {
   gamesData.forEach(game => {
     if (game.shouldSync === false) return; 
 
-    const fullPath = path.join(`C:/Users/${USERNAME}`, game.distLocal);
+    const fullPath = path.join(os.homedir(), game.distLocal);
     
     if (fs.existsSync(fullPath)) {
       if (activeWatchers[game.gameName]) return; 
 
       try {
         const watcher = fs.watch(fullPath, { recursive: true }, (eventType, filename) => {
+          // --- NEW MASTER SWITCH CHECK ---
+          // If the user turned off notifications/sync in settings, EXIT immediately.
+          const isSyncEnabled = !gamesFileJson.settings || gamesFileJson.settings.autoNotifications !== false;
+          
+          if (!isSyncEnabled) {
+            // The app is watching, but we do nothing. No timer, no upload.
+            return; 
+          }
+
           if (filename && (filename.endsWith('.tmp') || filename.includes('cache'))) return;
 
-          console.log(`[Auto-Sync] Detected save activity in ${game.gameName}. Waiting 3 seconds...`);
+          console.log(`[Auto-Sync] ${game.gameName} changed. Sync is ENABLED.`);
 
-         // --- THE DEBOUNCE LOGIC ---
-        
-      // 1. If a countdown is already running, KILL IT.
-      if (syncTimeouts[game.gameName]) {
-        clearTimeout(syncTimeouts[game.gameName]);
-      }
+          if (syncTimeouts[game.gameName]) {
+            clearTimeout(syncTimeouts[game.gameName]);
+          }
 
-      // 2. Start a fresh 15-second (15000ms) countdown.
-      // This function will ONLY execute if no more files are changed before it hits zero.
-      syncTimeouts[game.gameName] = setTimeout(() => {
-        console.log(`[Auto-Sync] 15 seconds of silence. Uploading ${game.gameName}...`);
-        triggerSilentSync(game);
-      }, 15000);
-            });
+          syncTimeouts[game.gameName] = setTimeout(() => {
+            queueSilentSync(game);
+          }, 120000); 
+        });
 
         activeWatchers[game.gameName] = watcher;
         console.log(`👀 Now watching: ${game.gameName}`);
@@ -819,42 +827,81 @@ function startBackgroundWatcher() {
   });
 }
 
-// THE NOTIFICATION TRIGGER (Make sure this isn't missing!)
+// --- NEW: THE QUEUE MANAGER ---
+function queueSilentSync(game) {
+  // Don't add to queue if it is already waiting in line
+  if (!syncQueue.some(g => g.gameName === game.gameName)) {
+    syncQueue.push(game);
+  }
+  processSyncQueue();
+}
+
+async function processSyncQueue() {
+  // If a sync is already happening, or the queue is empty, do nothing and wait.
+  if (isSyncRunning || syncQueue.length === 0) return;
+
+  // Lock the API!
+  isSyncRunning = true;
+  const gameToSync = syncQueue.shift(); // Get the first game in line
+
+  try {
+    await triggerSilentSync(gameToSync);
+  } catch (error) {
+    console.error("Queue processing error:", error);
+  } finally {
+    // Unlock the API and check if another game is waiting in line
+    isSyncRunning = false;
+    processSyncQueue(); 
+  }
+}
+
+// --- THE UPLOADER (Called by the Queue) ---
 async function triggerSilentSync(game) {
-  console.log(`🚀 Spawning notification for ${game.gameName}`);
+  console.log(`🚀 Starting background sync for ${game.gameName}`);
   
-  ipcRenderer.send('show-custom-notification', {
-    title: game.gameName,
-    image: game.background_image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=100",
-    status: "Auto-syncing save data...",
-    isDone: false
-  });
+  const wantsNotifications = !gamesFileJson.settings || gamesFileJson.settings.autoNotifications !== false;
+  
+  if (wantsNotifications) {
+    ipcRenderer.send('show-custom-notification', {
+      title: game.gameName,
+      image: game.background_image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=100",
+      status: "Auto-syncing save data...",
+      isDone: false
+    });
+  }
 
   try {
     let storage = await initializeStorage(userInfo.email, userInfo.password, () => {});
     await checkAndUploadGamesToCloud(storage, () => {});
     
-    const localRepoPath = path.join(`C:/Users/${USERNAME}`, "localgameRepo.json");
+    const localRepoPath = path.join(os.homedir(), "localgameRepo.json");
     gamesFileJson = await readJsonFile(localRepoPath);
     gamesData = gamesFileJson.gamesCloud;
     displayGames(gamesData);
     
-    ipcRenderer.send('update-custom-notification', {
-      title: game.gameName,
-      status: "Save data secured in cloud.",
-      isDone: true
-    });
+    if (wantsNotifications) {
+      ipcRenderer.send('update-custom-notification', {
+        title: game.gameName,
+        status: "Save data secured in cloud.",
+        isDone: true
+      });
+    }
     
     await storage.close();
   } catch (err) {
     console.error(`Background sync failed for ${game.gameName}`, err);
-    ipcRenderer.send('update-custom-notification', {
-      title: game.gameName,
-      status: "Auto-sync failed. Retrying later.",
-      isDone: true
-    });
+    
+    if (wantsNotifications) {
+      ipcRenderer.send('update-custom-notification', {
+        title: game.gameName,
+        status: "Auto-sync failed. Retrying later.",
+        isDone: true
+      });
+    }
   }
 }
+
+
 
 // THE UI TOGGLE BUTTON
 async function toggleSyncStatus(gameName) {
@@ -870,5 +917,319 @@ async function toggleSyncStatus(gameName) {
     
     const statusText = game.shouldSync ? "enabled" : "disabled";
     showNotification(`${gameName} sync ${statusText}. Restart app to apply.`, true);
+  }
+}
+
+// --- SETTINGS LOGIC ---
+
+// --- NAVIGATION LOGIC ---
+
+function showLibraryPage() {
+  // Show Library, Hide Settings
+  document.getElementById('library-view').style.display = 'flex';
+  document.getElementById('settings-view').style.display = 'none';
+  
+  // Update Active Styling in Navbar/Sidebar
+  document.getElementById('nav-library').classList.add('active');
+  document.getElementById('nav-settings').classList.remove('active');
+  document.getElementById('nav-settings').style.background = ""; // Reset background
+}
+
+function showSettingsPage() {
+  // Show Settings, Hide Library
+  document.getElementById('library-view').style.display = 'none';
+  document.getElementById('settings-view').style.display = 'flex';
+  
+  // Update Active Styling in Navbar/Sidebar
+  document.getElementById('nav-library').classList.remove('active');
+  document.getElementById('nav-settings').classList.add('active');
+  document.getElementById('nav-settings').style.background = "rgba(255, 255, 255, 0.1)"; // Highlight active button
+}
+
+// Ensure the update function still looks like this:
+async function updateSettings() {
+  const notifToggle = document.getElementById("toggle-notifications").checked;
+  const startupToggle = document.getElementById("toggle-startup").checked;
+
+  if (!gamesFileJson.settings) {
+    gamesFileJson.settings = { autoNotifications: true, runOnStartup: false };
+  }
+
+  gamesFileJson.settings.autoNotifications = notifToggle;
+  gamesFileJson.settings.runOnStartup = startupToggle;
+
+  const localRepoPath = path.join(os.homedir(), 'localgameRepo.json');
+  await writeJsonFile(localRepoPath, gamesFileJson);
+
+  ipcRenderer.send('toggle-startup', startupToggle);
+
+  showNotification("Settings saved successfully.", true);
+}
+
+// Ensure the modal closes if you click outside of it
+document.addEventListener("click", (e) => {
+  if (e.target.id === "settingsModal") hideSettingsModal();
+});
+
+// Assuming 'gamesFileJson' is where you store local data, let's add a settings object to it
+async function updateSettings() {
+  const notifToggle = document.getElementById("toggle-notifications").checked;
+  const startupToggle = document.getElementById("toggle-startup").checked;
+
+  // Initialize settings object if it doesn't exist in your JSON yet
+  if (!gamesFileJson.settings) {
+    gamesFileJson.settings = { autoNotifications: true, runOnStartup: false };
+  }
+
+  // Update the values
+  gamesFileJson.settings.autoNotifications = notifToggle;
+  gamesFileJson.settings.runOnStartup = startupToggle;
+
+  // 1. Save to your local JSON
+  const localRepoPath = path.join(os.homedir(), 'localgameRepo.json');
+  await writeJsonFile(localRepoPath, gamesFileJson);
+
+  // 2. Tell Electron main.js to update the OS Startup Registry!
+  ipcRenderer.send('toggle-startup', startupToggle);
+
+  showNotification("Settings saved successfully.", true);
+}
+
+// This function reads the JSON and updates the visual UI toggles
+function applySavedSettings() {
+  // 1. Make sure we actually have settings in our JSON file
+  if (gamesFileJson && gamesFileJson.settings) {
+    
+    // 2. Find the HTML toggle switches
+    const notifToggle = document.getElementById("toggle-notifications");
+    const startupToggle = document.getElementById("toggle-startup");
+
+    // 3. Flip the switches to match the saved data!
+    if (notifToggle) {
+      notifToggle.checked = gamesFileJson.settings.autoNotifications;
+    }
+    
+    if (startupToggle) {
+      startupToggle.checked = gamesFileJson.settings.runOnStartup;
+    }
+    
+  } else {
+    // Fallback if settings don't exist yet
+    document.getElementById("toggle-notifications").checked = true;
+    document.getElementById("toggle-startup").checked = false;
+  }
+}
+
+function showCommunityPage() {
+  // Hide others
+  document.getElementById('library-view').style.display = 'none';
+  document.getElementById('settings-view').style.display = 'none';
+  // Show Community
+  document.getElementById('community-view').style.display = 'flex';
+  
+  // Update Active Nav
+  document.querySelectorAll('.menu-items').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-community').classList.add('active');
+  
+  fetchCommunityPosts(); // Function to trigger the API call
+}
+
+function renderComment(comment, currentUser) {
+  // Logic: Is the current user the author? OR Is the current user an admin?
+  const canDelete = (currentUser.username === comment.author) || (currentUser.role === 'admin');
+
+  return `
+    <div class="comment">
+      <div class="comment-header">
+        <strong>${comment.author}</strong> 
+        ${comment.role === 'admin' ? '<span class="admin-badge">ADMIN</span>' : ''}
+      </div>
+      <p>${comment.text}</p>
+      ${canDelete ? `<button class="delete-btn" onclick="deleteComment('${comment._id}')">Delete</button>` : ''}
+    </div>
+  `;
+}
+
+// --- COMMUNITY LOGIC ---
+
+function showPostModal() { document.getElementById('postModal').classList.add('active'); }
+function closePostModal() { document.getElementById('postModal').classList.remove('active'); }
+
+async function fetchCommunityPosts() {
+  const feed = document.getElementById('communityFeed');
+  feed.innerHTML = '<div class="loader">Fetching discussions...</div>';
+
+  try {
+    const posts = await CommunityService.getAllPosts();
+    feed.innerHTML = '';
+
+    posts.forEach(post => {
+      // Permission Logic
+      const canDelete = (userInfo.username === post.author) || (userInfo.role === 'admin');
+
+      const postHtml = `
+        <div class="post-card">
+          <div class="post-header">
+            <span class="post-user">${post.author}</span>
+            <span class="post-date">${new Date(post.date).toLocaleDateString()}</span>
+          </div>
+          <div class="post-title">${post.title}</div>
+          <div class="post-body">${post.content}</div>
+          <div class="post-footer">
+            <button class="action-btn" onclick="openComments('${post._id}')">Comments (${post.comments ? post.comments.length : 0})</button>
+            ${canDelete ? `<button class="delete-btn" onclick="handleDeletePost('${post._id}')">Delete</button>` : ''}
+          </div>
+        </div>
+      `;
+      feed.innerHTML += postHtml;
+    });
+  } catch (err) {
+    feed.innerHTML = '<div class="error">Community is currently unreachable.</div>';
+  }
+}
+
+// Helper for the delete button
+async function handleDeletePost(postId) {
+    if(confirm("Delete this thread?")) {
+        await CommunityService.deletePost(postId);
+        showNotification("Thread removed.", true);
+        fetchCommunityPosts(); // Refresh
+    }
+}
+// --- COMMUNITY UI ACTIONS ---
+
+async function submitPost() {
+  const title = document.getElementById('postTitle').value.trim();
+  const content = document.getElementById('postContent').value.trim();
+
+  if (!title || !content) {
+    // Assuming you have your showNotification function available
+    showNotification("Please enter a title and description", false);
+    return;
+  }
+
+  const newPost = {
+    author: userInfo.username,
+    role: userInfo.role || "user",
+    title: title,
+    content: content,
+    date: new Date(),
+    comments: []
+  };
+
+  try {
+    const submitBtn = document.querySelector("#postModal .btn-submit");
+    if (submitBtn) {
+      submitBtn.innerText = "PUBLISHING...";
+      submitBtn.disabled = true;
+    }
+
+    // Call the Service file to save to MongoDB
+    await CommunityService.createPost(newPost);
+    
+    showNotification("Post shared with the community!", true);
+    closePostModal();
+    
+    // Check if fetchCommunityPosts exists before calling it
+    if (typeof fetchCommunityPosts === "function") {
+      fetchCommunityPosts(); 
+    }
+  } catch (err) {
+    console.error("Submission Error:", err);
+    showNotification("Database Error. Check console.", false);
+  } finally {
+    const submitBtn = document.querySelector("#postModal .btn-submit");
+    if (submitBtn) {
+      submitBtn.innerText = "PUBLISH POST";
+      submitBtn.disabled = false;
+    }
+  }
+}
+
+// --- COMMENTS ENGINE ---
+let activePostIdForComments = null;
+
+async function openComments(postId) {
+  activePostIdForComments = postId;
+  const modal = document.getElementById('commentsModal');
+  if (modal) modal.classList.add('active');
+  
+  await refreshCommentsDisplay();
+}
+
+function closeCommentsModal() {
+  activePostIdForComments = null;
+  const modal = document.getElementById('commentsModal');
+  if (modal) modal.classList.remove('active');
+  document.getElementById('newCommentText').value = '';
+}
+
+async function refreshCommentsDisplay() {
+  const list = document.getElementById('commentsList');
+  list.innerHTML = '<div class="loader">Loading replies...</div>';
+  
+  try {
+    // Fetch all posts to grab the freshest comments for this specific post
+    const posts = await CommunityService.getAllPosts();
+    const currentPost = posts.find(p => p._id.toString() === activePostIdForComments);
+
+    if (!currentPost) {
+      list.innerHTML = '<div style="color: #ff4747;">Thread not found.</div>';
+      return;
+    }
+
+    document.getElementById('commentThreadTitle').innerText = `Replies to: ${currentPost.author}`;
+
+    if (!currentPost.comments || currentPost.comments.length === 0) {
+      list.innerHTML = '<div style="color: var(--steam-text-muted); text-align: center; padding: 20px;">No comments yet. Be the first to reply!</div>';
+      return;
+    }
+
+    // Build the HTML for each comment
+    list.innerHTML = '';
+    currentPost.comments.forEach(c => {
+      list.innerHTML += `
+        <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 6px; border-left: 3px solid #3d4450;">
+          <div style="font-size: 0.75rem; color: var(--steam-text-muted); margin-bottom: 6px;">
+            <strong style="color: #fff;">${c.author}</strong>
+            ${c.role === 'admin' ? '<span class="admin-tag">DEVELOPER</span>' : ''}
+            <span style="margin-left: 8px;">${new Date(c.date).toLocaleString()}</span>
+          </div>
+          <div style="color: var(--steam-text); font-size: 0.9rem;">${c.text}</div>
+        </div>
+      `;
+    });
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = '<div style="color: #ff4747;">Error loading replies.</div>';
+  }
+}
+
+async function submitComment() {
+  if (!activePostIdForComments) return;
+  
+  const input = document.getElementById('newCommentText');
+  const text = input.value.trim();
+
+  if (!text) return; // Don't post empty comments
+
+  const newComment = {
+    author: userInfo.username,
+    role: userInfo.role || 'user',
+    text: text,
+    date: new Date()
+  };
+
+  try {
+    // Save to MongoDB
+    await CommunityService.addComment(activePostIdForComments, newComment);
+    
+    input.value = ''; // Clear the input box
+    await refreshCommentsDisplay(); // Update the modal with the new comment
+    fetchCommunityPosts(); // Update the main feed so the (1) counter goes up!
+    
+  } catch (err) {
+    console.error(err);
+    showNotification("Failed to post reply", false);
   }
 }

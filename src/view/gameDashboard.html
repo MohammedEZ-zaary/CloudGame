@@ -9,10 +9,12 @@
 </head>
 <body>
   <div class="title-bar">
-    <div class="title-left">
-      <div class="title">CLOUDGAME</div>
-      <div class="menu-items active">LIBRARY</div>
-    </div>
+  <div class="title-left">
+    <div class="title">CLOUDGAME</div>
+      <div class="menu-items active" id="nav-library" onclick="showLibraryPage()">LIBRARY</div>
+      <div class="menu-items" id="nav-settings-top" onclick="showSettingsPage()">SETTINGS</div>
+      <div class="menu-items" id="nav-community" onclick="showCommunityPage()">COMMUNITY</div>
+  </div>
     <div class="controls">
       <button id="minimize-btn" class="control-btn">−</button>
       <button id="maximize-btn" class="control-btn">□</button>
@@ -52,7 +54,6 @@
           </svg>
           <span>Auto-Scan PC</span>
         </button>
-
       </div>
 <div class="sync-status-container">
   <div class="status-header">
@@ -84,22 +85,67 @@
 </div>
     </div>
 
-    <div class="main-content">
-      <div class="panel-header">
-        <h2>ALL GAMES</h2>
-        <div class="view-controls">
-           <span class="game-count" id="game-count">0/0</span>
-        </div>
-      </div>
-      
-      <div class="game-library-container">
-        <div class="game-library" id="gameLibrary">
+<div class="main-content">  
+    <div id="library-view" style="display: flex; flex-direction: column; height: 100%; width: 100%;">
+        <div class="panel-header">
+          <h2>ALL GAMES</h2>
+          <div class="view-controls">
+            <span class="game-count" id="game-count">0/0</span>
           </div>
-      </div>
+        </div>
+        
+        <div class="game-library-container">
+          <div class="game-library" id="gameLibrary">
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div class="modal-overlay" id="addGameModal">
+    <div id="settings-view" style="display: none; flex-direction: column; height: 100%; width: 100%;">
+        <div class="panel-header">
+          <h2>APPLICATION SETTINGS</h2>
+        </div>
+        
+        <div class="settings-page-container">
+          <div class="settings-section">
+            <h3 class="settings-section-title">System</h3>
+            <div class="settings-list">
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Run on System Startup</h4>
+                  <p>Launch CloudGame silently in the background when you turn on your PC.</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-startup" onchange="updateSettings()">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3 class="settings-section-title">Notifications</h3>
+            <div class="settings-list">
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Auto-Sync Notifications</h4>
+                  <p>Show a popup in the corner of your screen when a game save is uploaded.</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-notifications" onchange="updateSettings()">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+            </div>
+          </div>
+        </div>
+    </div>
+
+    </div>
+    <div class="modal-overlay" id="addGameModal">
     <div class="modal-box">
       <h3>Add a Non-Store Game</h3>
       <div class="form-group">
@@ -115,9 +161,9 @@
         <button class="btn-submit" onclick="addGame()">ADD SELECTED PROGRAM</button>
       </div>
     </div>
-  </div>
+    </div>
 
-  <div class="modal-overlay" id="shareModal">
+    <div class="modal-overlay" id="shareModal">
     <div class="modal-box share-box">
       <h3>Share Game Save</h3>
       <p style="color: #8f98a0; font-size: 0.9rem; margin-bottom: 15px;">Copy this link to share your cloud save with a friend.</p>
@@ -129,9 +175,9 @@
         <button class="btn-cancel" onclick="document.getElementById('shareModal').classList.remove('active')">CLOSE</button>
       </div>
     </div>
-  </div>
+    </div>
 
-  <div class="modal-overlay" id="scanModal">
+    <div class="modal-overlay" id="scanModal">
     <div class="modal-box" style="width: 600px; max-height: 80vh; display: flex; flex-direction: column;">
       <h3 style="display: flex; align-items: center; gap: 10px;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; color: var(--steam-blue);">
@@ -154,41 +200,60 @@
         <button class="btn-cancel" onclick="document.getElementById('scanModal').classList.remove('active')">CANCEL</button>
       </div>
     </div>
+    </div>
+    <div id="community-view" style="display: none; flex-direction: column; height: 100%; width: 100%;">
+  <div class="panel-header">
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <h2>COMMUNITY</h2>
+      <span class="online-indicator">● ONLINE</span>
+    </div>
+    <button class="action-btn primary" onclick="showPostModal()">
+      <span>NEW POST</span>
+    </button>
   </div>
 
-  <div class="modal-overlay" id="gameDetailsModal">
-    <div class="modal-box details-box">
-      <button class="close-details-btn" onclick="hideGameDetails()">×</button>
-      
-      <div class="details-hero" id="detailsHero">
-        <div class="hero-gradient"></div>
-      </div>
-      
-      <div class="details-content">
-        <h2 id="detailsTitle">Game Title</h2>
-        
-        <div class="details-meta">
-          <span class="meta-tag rating" id="detailsRating" style="display: flex; align-items: center; gap: 4px;">
-            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width: 14px; height: 14px; color: #f1c40f;">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-            </svg>
-            0.0
-          </span>
-          <span class="meta-tag status" id="detailsStatus">Syncing</span>
-        </div>
-        
-        <div class="details-info-row">
-          <strong>Local Target:</strong> <span id="detailsPath">C:/...</span>
-        </div>
-        
-        <div class="details-genres" id="detailsGenres">
-          </div>
-        
-        <div class="details-actions">
-          <button class="btn-submit btn-launch" onclick="hideGameDetails()">CLOSE</button>
-        </div>
-      </div>
+  <div class="community-layout">
+    <div class="community-feed" id="communityFeed">
+      <div class="loader">Loading community discussions...</div>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="postModal">
+  <div class="modal-box">
+    <h3>Report a Bug / Suggestion</h3>
+    <div class="form-group">
+      <label>Title</label>
+      <input type="text" id="postTitle" placeholder="e.g. Sync error on God of War">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="postContent" style="width: 100%; height: 100px; background: rgba(0,0,0,0.4); border: 1px solid #171a21; color: #fff; padding: 10px; border-radius: 4px;"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="closePostModal()">CANCEL</button>
+      <button class="btn-submit" onclick="submitPost()">PUBLISH POST</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="commentsModal">
+  <div class="modal-box" style="max-width: 600px;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
+      <h3 id="commentThreadTitle" style="margin: 0; color: var(--steam-blue);">Thread Replies</h3>
+      <button class="btn-cancel" onclick="closeCommentsModal()" style="padding: 5px 15px; margin: 0;">Close</button>
+    </div>
+
+    <div id="commentsList" style="max-height: 350px; overflow-y: auto; margin-bottom: 20px; padding-right: 10px; display: flex; flex-direction: column; gap: 10px;">
+      </div>
+
+    <div style="display: flex; gap: 10px;">
+      <input type="text" id="newCommentText" placeholder="Write a reply..." style="flex: 1; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid #171a21; color: #fff; border-radius: 4px;">
+      <button class="btn-submit" onclick="submitComment()" style="margin: 0; white-space: nowrap;">Post Reply</button>
+    </div>
+
+  </div>
+</div>
   </div>
   <script src="../js/gameDashboard.js"></script>
 </body>
