@@ -9,10 +9,12 @@
 </head>
 <body>
   <div class="title-bar">
-    <div class="title-left">
-      <div class="title">CLOUDGAME</div>
-      <div class="menu-items active">LIBRARY</div>
-    </div>
+  <div class="title-left">
+    <div class="title">CLOUDGAME</div>
+      <div class="menu-items active" id="nav-library" onclick="showLibraryPage()" data-i18n="library">LIBRARY</div>
+      <div class="menu-items" id="nav-settings-top" onclick="showSettingsPage()" data-i18n="settings">SETTINGS</div>
+      <div class="menu-items" id="nav-community" onclick="showCommunityPage()" data-i18n="community">COMMUNITY</div>
+  </div>
     <div class="controls">
       <button id="minimize-btn" class="control-btn">−</button>
       <button id="maximize-btn" class="control-btn">□</button>
@@ -34,7 +36,7 @@
           <svg class="icon sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-10.09l5.67-5.67"/>
           </svg>
-          <span>Sync Library</span>
+          <span data-i18n="syncLibrary">Sync Library</span>
         </button>
 
         <button class="action-btn" onclick="showAddGameModal()">
@@ -42,7 +44,7 @@
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          <span>Add a Game</span>
+          <span data-i18n="addGame">Add a Game</span>
         </button>
 
         <button class="action-btn" onclick="openScanner()">
@@ -50,20 +52,19 @@
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <span>Auto-Scan PC</span>
+          <span data-i18n="autoScan">Auto-Scan PC</span>
         </button>
-
       </div>
 <div class="sync-status-container">
   <div class="status-header">
     <svg id="status-icon" class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.39 0 4.56.94 6.18 2.46L21 6v6h-6"/>
     </svg>
-    <span class="status-label">SYSTEM STATUS</span>
+    <span class="status-label" data-i18n="systemStatus">SYSTEM STATUS</span>
   </div>
   <div class="sync-status-text" id="last-sync">Initializing...</div>
 </div><div class="sidebar-footer">
-  <div class="footer-label">DEVELOPER</div>
+  <div class="footer-label" data-i18n="developer">DEVELOPER</div>
   <div class="social-links">
     <a href="https://github.com/MohammedEZ-zaary" class="social-icon-btn github" title="GitHub Source">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.841 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
@@ -84,111 +85,187 @@
 </div>
     </div>
 
-    <div class="main-content">
-      <div class="panel-header">
-        <h2>ALL GAMES</h2>
-        <div class="view-controls">
-           <span class="game-count" id="game-count">0/0</span>
-        </div>
-      </div>
-      
-      <div class="game-library-container">
-        <div class="game-library" id="gameLibrary">
+<div class="main-content">  
+    <div id="library-view" style="display: flex; flex-direction: column; height: 100%; width: 100%;">
+        <div class="panel-header">
+          <h2 data-i18n="allGames">ALL GAMES</h2>
+          <div class="view-controls">
+            <span class="game-count" id="game-count">0/0</span>
           </div>
-      </div>
+        </div>
+        
+        <div class="game-library-container">
+          <div class="game-library" id="gameLibrary">
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div class="modal-overlay" id="addGameModal">
+    <div id="settings-view" style="display: none; flex-direction: column; height: 100%; width: 100%;">
+        <div class="panel-header">
+          <h2 data-i18n="appSettings">APPLICATION SETTINGS</h2>
+        </div>
+        
+        <div class="settings-page-container">
+          <div class="settings-section">
+            <h3 class="settings-section-title" data-i18n="system">System</h3>
+            <div class="settings-list">
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4 data-i18n="runOnStartup">Run on System Startup</h4>
+                  <p data-i18n="runOnStartupDesc">Launch CloudGame silently in the background when you turn on your PC.</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-startup" onchange="updateSettings()">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3 class="settings-section-title" data-i18n="notifications">Notifications</h3>
+            <div class="settings-list">
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4 data-i18n="autoSyncNotif">Auto-Sync Notifications</h4>
+                  <p data-i18n="autoSyncNotifDesc">Show a popup in the corner of your screen when a game save is uploaded.</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-notifications" onchange="updateSettings()">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+            </div>
+          </div>
+          <div class="settings-group" style="margin-top: 20px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+  <h3 data-i18n="languageSettings" style="margin-top: 0; color: var(--steam-blue);">Language Settings</h3>
+  
+  <div style="display: flex; align-items: center; gap: 15px; margin-top: 15px;">
+    <label data-i18n="selectLanguage" style="color: var(--steam-text);">Select Language:</label>
+    
+    <select id="languageSelect" class="settings-dropdown" onchange="changeLanguage(this.value)">
+      <option value="en">English</option>
+      <option value="ar">العربية (Arabic)</option>
+    </select>
+  </div>
+</div>
+        </div>
+    </div>
+
+    </div>
+    <div class="modal-overlay" id="addGameModal">
     <div class="modal-box">
-      <h3>Add a Non-Store Game</h3>
+      <h3 data-i18n="addNonStoreGame">Add a Non-Store Game</h3>
       <div class="form-group">
-        <label>Game Designation</label>
-        <input type="text" id="gameName" placeholder="e.g. Elden Ring" />
+        <label data-i18n="gameDesignation">Game Designation</label>
+        <input type="text" id="gameName" data-i18n="gameNamePlaceholder" placeholder="e.g. Elden Ring" />
       </div>
       <div class="form-group">
-        <label>Target Path</label>
+        <label data-i18n="targetPath">Target Path</label>
         <input type="text" id="gamePath" placeholder="C:\Games\..." />
       </div>
       <div class="form-actions">
-        <button class="btn-cancel" onclick="hideAddGameModal()">CANCEL</button>
-        <button class="btn-submit" onclick="addGame()">ADD SELECTED PROGRAM</button>
+        <button class="btn-cancel" onclick="hideAddGameModal()" data-i18n="cancel">CANCEL</button>
+        <button class="btn-submit" onclick="addGame()" data-i18n="addSelectedProgram">ADD SELECTED PROGRAM</button>
       </div>
     </div>
-  </div>
+    </div>
 
-  <div class="modal-overlay" id="shareModal">
+    <div class="modal-overlay" id="shareModal">
     <div class="modal-box share-box">
-      <h3>Share Game Save</h3>
-      <p style="color: #8f98a0; font-size: 0.9rem; margin-bottom: 15px;">Copy this link to share your cloud save with a friend.</p>
+      <h3 data-i18n="shareGameSave">Share Game Save</h3>
+      <p style="color: #8f98a0; font-size: 0.9rem; margin-bottom: 15px;" data-i18n="shareDesc">Copy this link to share your cloud save with a friend.</p>
       <div class="share-input-group">
         <input type="text" id="shareLinkInput" readonly />
-        <button onclick="copyShareLink()">Copy</button>
+        <button onclick="copyShareLink()" data-i18n="copy">Copy</button>
       </div>
       <div class="form-actions" style="margin-top: 20px;">
-        <button class="btn-cancel" onclick="document.getElementById('shareModal').classList.remove('active')">CLOSE</button>
+        <button class="btn-cancel" onclick="document.getElementById('shareModal').classList.remove('active')" data-i18n="close">CLOSE</button>
       </div>
     </div>
-  </div>
+    </div>
 
-  <div class="modal-overlay" id="scanModal">
+    <div class="modal-overlay" id="scanModal">
     <div class="modal-box" style="width: 600px; max-height: 80vh; display: flex; flex-direction: column;">
       <h3 style="display: flex; align-items: center; gap: 10px;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; color: var(--steam-blue);">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        Scan for Game Saves
+        <span data-i18n="scanSaves">Scan for Game Saves</span>
       </h3>
-      <p style="color: #8f98a0; font-size: 0.9rem; margin-bottom: 15px;">Scanning common save locations (Documents, AppData, Saved Games)...</p>
+      <p style="color: #8f98a0; font-size: 0.9rem; margin-bottom: 15px;" data-i18n="scanningDesc">Scanning common save locations (Documents, AppData, Saved Games)...</p>
       
       <div id="scanLoader" style="text-align: center; padding: 20px; display: none;">
         <div class="spinner" style="width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--steam-blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-        <p style="margin-top: 10px; color: var(--steam-blue);">Scanning drives...</p>
+        <p style="margin-top: 10px; color: var(--steam-blue);" data-i18n="scanningDrives">Scanning drives...</p>
       </div>
 
       <div class="scan-results" id="scanResults" style="flex: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 4px; border: 1px solid #171a21; padding: 10px;">
         </div>
 
       <div class="form-actions" style="margin-top: 20px;">
-        <button class="btn-cancel" onclick="document.getElementById('scanModal').classList.remove('active')">CANCEL</button>
+        <button class="btn-cancel" onclick="document.getElementById('scanModal').classList.remove('active')" data-i18n="cancel">CANCEL</button>
       </div>
     </div>
+    </div>
+    <div id="community-view" style="display: none; flex-direction: column; height: 100%; width: 100%;">
+  <div class="panel-header">
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <h2 data-i18n="community">COMMUNITY</h2>
+      <span class="online-indicator" data-i18n="online">● ONLINE</span>
+    </div>
+    <button class="action-btn primary" onclick="showPostModal()">
+      <span data-i18n="newPost">NEW POST</span>
+    </button>
   </div>
 
-  <div class="modal-overlay" id="gameDetailsModal">
-    <div class="modal-box details-box">
-      <button class="close-details-btn" onclick="hideGameDetails()">×</button>
-      
-      <div class="details-hero" id="detailsHero">
-        <div class="hero-gradient"></div>
-      </div>
-      
-      <div class="details-content">
-        <h2 id="detailsTitle">Game Title</h2>
-        
-        <div class="details-meta">
-          <span class="meta-tag rating" id="detailsRating" style="display: flex; align-items: center; gap: 4px;">
-            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width: 14px; height: 14px; color: #f1c40f;">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-            </svg>
-            0.0
-          </span>
-          <span class="meta-tag status" id="detailsStatus">Syncing</span>
-        </div>
-        
-        <div class="details-info-row">
-          <strong>Local Target:</strong> <span id="detailsPath">C:/...</span>
-        </div>
-        
-        <div class="details-genres" id="detailsGenres">
-          </div>
-        
-        <div class="details-actions">
-          <button class="btn-submit btn-launch" onclick="hideGameDetails()">CLOSE</button>
-        </div>
-      </div>
+  <div class="community-layout">
+    <div class="community-feed" id="communityFeed">
+      <div class="loader" data-i18n="loadingCommunity">Loading community discussions...</div>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="postModal">
+  <div class="modal-box">
+    <h3 data-i18n="reportBug">Report a Bug / Suggestion</h3>
+    <div class="form-group">
+      <label data-i18n="title">Title</label>
+      <input type="text" id="postTitle" data-i18n="titlePlaceholder" placeholder="e.g. Sync error on God of War">
+    </div>
+    <div class="form-group">
+      <label data-i18n="description">Description</label>
+      <textarea id="postContent" style="width: 100%; height: 100px; background: rgba(0,0,0,0.4); border: 1px solid #171a21; color: #fff; padding: 10px; border-radius: 4px;"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="closePostModal()" data-i18n="cancel">CANCEL</button>
+      <button class="btn-submit" onclick="submitPost()" data-i18n="publish">PUBLISH POST</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="commentsModal">
+  <div class="modal-box" style="max-width: 600px;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
+      <h3 id="commentThreadTitle" style="margin: 0; color: var(--steam-blue);" data-i18n="threadReplies">Thread Replies</h3>
+      <button class="btn-cancel" onclick="closeCommentsModal()" style="padding: 5px 15px; margin: 0;" data-i18n="close">Close</button>
+    </div>
+
+    <div id="commentsList" style="max-height: 350px; overflow-y: auto; margin-bottom: 20px; padding-right: 10px; display: flex; flex-direction: column; gap: 10px;">
+      </div>
+
+    <div style="display: flex; gap: 10px;">
+      <input type="text" id="newCommentText" data-i18n="writeReply" placeholder="Write a reply..." style="flex: 1; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid #171a21; color: #fff; border-radius: 4px;">
+      <button class="btn-submit" onclick="submitComment()" style="margin: 0; white-space: nowrap;" data-i18n="postReply">Post Reply</button>
+    </div>
+
+  </div>
+</div>
   </div>
   <script src="../js/gameDashboard.js"></script>
 </body>

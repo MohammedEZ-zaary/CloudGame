@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, Tray, Menu, screen } = require("electron");
 const { webcrypto } = require('crypto');
 const path = require("path");
 require('dotenv').config({ path: path.join(__dirname, './.env') });
+
 if (!globalThis.crypto) {
   globalThis.crypto = webcrypto;
 }
@@ -12,8 +13,11 @@ let tray = null;
 let notificationWindow = null;
 let isQuitting = false;
 
+// --- NEW: Detect if Windows launched the app in the background ---
+const isHiddenBoot = process.argv.includes('--hidden');
+
 function createWindows() {
-  // 1. Create the Main Window (Hidden initially)
+  // 1. Create the Main Window (Always hidden initially)
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 900,
@@ -29,7 +33,6 @@ function createWindows() {
     icon: path.join(__dirname, "src","assets", "cloud-game.ico"),
   });
 
-  // Keep the app running in the background when X is clicked
   mainWindow.on('close', (event) => {
     if (!isQuitting) {
       event.preventDefault(); 
@@ -39,20 +42,22 @@ function createWindows() {
 
   mainWindow.loadFile("./src/view/login.html");
 
-  // 2. Create the Splash Screen Window
-  splashWindow = new BrowserWindow({
-    width: 600,
-    height: 400,
-    transparent: true, 
-    frame: false,
-    alwaysOnTop: true, 
-    webPreferences: {
-      contextIsolation: false,
-      nodeIntegration: true
-    }
-  });
+  // 2. Only show the Splash Screen if the user manually opened the app!
+  if (!isHiddenBoot) {
+    splashWindow = new BrowserWindow({
+      width: 600,
+      height: 400,
+      transparent: true, 
+      frame: false,
+      alwaysOnTop: true, 
+      webPreferences: {
+        contextIsolation: false,
+        nodeIntegration: true
+      }
+    });
 
-  splashWindow.loadFile("./src/view/intro.html");
+    splashWindow.loadFile("./src/view/intro.html");
+  }
 
   // --- IPC EVENT LISTENERS ---
 
@@ -69,7 +74,6 @@ function createWindows() {
     mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
   });
   
-  // FIX: This now hides the app to the tray instead of killing it!
   ipcMain.on("close", () => {
     if (!isQuitting) {
       mainWindow.hide();
@@ -87,7 +91,6 @@ function createWindows() {
 
 // --- SYSTEM TRAY LOGIC ---
 function createTray() {
-  // Replace with the exact path to your app's icon
   tray = new Tray(path.join(__dirname, 'src', 'assets', 'cloud-game.ico')); 
   
   const contextMenu = Menu.buildFromTemplate([
@@ -107,9 +110,17 @@ function createTray() {
   tray.on('double-click', () => mainWindow.show());
 }
 
+// --- NEW: STARTUP SETTINGS LISTENER ---
+ipcMain.on('toggle-startup', (event, runOnStartup) => {
+  app.setLoginItemSettings({
+    openAtLogin: runOnStartup,
+    // This argument tells Electron to launch in "hidden" mode
+    args: ['--hidden']
+  });
+});
+
 // --- STEAM-STYLE NOTIFICATION LOGIC ---
 ipcMain.on('show-custom-notification', (event, data) => {
-  // 1. THE FIX: Safely check if an old window exists before trying to close it
   if (notificationWindow && !notificationWindow.isDestroyed()) {
     notificationWindow.close(); 
   }
@@ -136,14 +147,12 @@ ipcMain.on('show-custom-notification', (event, data) => {
     }
   });
 
-  // 2. THE FIX: Clear the ghost from memory when it closes
   notificationWindow.on('closed', () => {
     notificationWindow = null;
   });
 
   notificationWindow.loadFile('./src/view/notification.html');
 
-  // 3. THE FIX: Make sure the window is still alive before sending text to it
   notificationWindow.webContents.on('did-finish-load', () => {
     if (notificationWindow && !notificationWindow.isDestroyed()) {
       notificationWindow.webContents.send('update-notification', data);
@@ -160,7 +169,6 @@ ipcMain.on('show-custom-notification', (event, data) => {
 });
 
 ipcMain.on('update-custom-notification', (event, data) => {
-  // 4. THE FIX: Same safety check here
   if (notificationWindow && !notificationWindow.isDestroyed()) {
     notificationWindow.webContents.send('update-notification', data);
     
@@ -179,7 +187,7 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 app.whenReady().then(() => {
   createWindows();
-  createTray(); // Initialize the background engine!
+  createTray();
 });
 
 app.on("window-all-closed", () => {
