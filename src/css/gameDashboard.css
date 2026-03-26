@@ -815,3 +815,29 @@ body {
   font-weight: 800;
   letter-spacing: 1px;
 }
+
+
+/* ========================================== */
+/* SETTINGS UI                                */
+/* ========================================== */
+.settings-dropdown {
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  border: 1px solid #171a21;
+  padding: 10px 15px;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+.settings-dropdown:focus {
+  border-color: var(--steam-blue);
+}
+
+.settings-dropdown option {
+  background: #1e2329; /* Dark background for the expanded menu */
+  color: #fff;
+}

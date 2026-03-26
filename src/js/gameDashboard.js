@@ -114,12 +114,12 @@ function displayGames(games) {
     if (!game.shouldSync) gameItem.classList.add("not-syncing");
 
     // ADD THIS: Make the whole card clickable
-    gameItem.onclick = (e) => {
-      // Don't open details if they clicked the options button (⋮) or dropdown!
-      if (e.target.closest('.options-wrapper')) return; 
+    // gameItem.onclick = (e) => {
+    //   // Don't open details if they clicked the options button (⋮) or dropdown!
+    //   if (e.target.closest('.options-wrapper')) return; 
       
-      showGameDetails(game.gameName);
-    };
+    //   showGameDetails(game.gameName);
+    // };
 
     const defaultImg = "https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80";
     const imgSrc = game.background_image || defaultImg;
@@ -650,7 +650,6 @@ const prompt = `
       console.error("OpenAI Error:", data.error.message);
       return null;
     }
-
     let aiResponse = data.choices[0].message.content.trim();
     
     // 2. FIX: Strip out markdown backticks if the AI disobeys instructions
@@ -806,7 +805,7 @@ function startBackgroundWatcher() {
 
           if (filename && (filename.endsWith('.tmp') || filename.includes('cache'))) return;
 
-          console.log(`[Auto-Sync] ${game.gameName} changed. Sync is ENABLED.`);
+          // console.log(`[Auto-Sync] ${game.gameName} changed. Sync is ENABLED.`);
 
           if (syncTimeouts[game.gameName]) {
             clearTimeout(syncTimeouts[game.gameName]);
@@ -818,7 +817,7 @@ function startBackgroundWatcher() {
         });
 
         activeWatchers[game.gameName] = watcher;
-        console.log(`👀 Now watching: ${game.gameName}`);
+        // console.log(`👀 Now watching: ${game.gameName}`);
         
       } catch (error) {
         console.error(`Failed to watch ${game.gameName}:`, error);
@@ -857,7 +856,7 @@ async function processSyncQueue() {
 
 // --- THE UPLOADER (Called by the Queue) ---
 async function triggerSilentSync(game) {
-  console.log(`🚀 Starting background sync for ${game.gameName}`);
+  // console.log(`🚀 Starting background sync for ${game.gameName}`);
   
   const wantsNotifications = !gamesFileJson.settings || gamesFileJson.settings.autoNotifications !== false;
   
@@ -925,25 +924,30 @@ async function toggleSyncStatus(gameName) {
 // --- NAVIGATION LOGIC ---
 
 function showLibraryPage() {
-  // Show Library, Hide Settings
-  document.getElementById('library-view').style.display = 'flex';
+  // 1. Turn OFF the other pages
+  document.getElementById('community-view').style.display = 'none';
   document.getElementById('settings-view').style.display = 'none';
   
-  // Update Active Styling in Navbar/Sidebar
-  document.getElementById('nav-library').classList.add('active');
-  document.getElementById('nav-settings').classList.remove('active');
-  document.getElementById('nav-settings').style.background = ""; // Reset background
-}
+  // 2. Turn ON the Library page
+  document.getElementById('library-view').style.display = 'flex'; 
 
+  // 3. Update the menu button highlight
+  document.querySelectorAll('.menu-items').forEach(el => el.classList.remove('active'));
+  const navBtn = document.getElementById('nav-library'); // Make sure this matches your HTML ID
+  if (navBtn) navBtn.classList.add('active');
+}
 function showSettingsPage() {
-  // Show Settings, Hide Library
+  // 1. Turn OFF the other pages
   document.getElementById('library-view').style.display = 'none';
-  document.getElementById('settings-view').style.display = 'flex';
+  document.getElementById('community-view').style.display = 'none';
   
-  // Update Active Styling in Navbar/Sidebar
-  document.getElementById('nav-library').classList.remove('active');
-  document.getElementById('nav-settings').classList.add('active');
-  document.getElementById('nav-settings').style.background = "rgba(255, 255, 255, 0.1)"; // Highlight active button
+  // 2. Turn ON the Settings page
+  document.getElementById('settings-view').style.display = 'flex';
+
+  // 3. Update the menu button highlight
+  document.querySelectorAll('.menu-items').forEach(el => el.classList.remove('active'));
+  const navBtn = document.getElementById('nav-settings-top'); // We used this ID earlier
+  if (navBtn) navBtn.classList.add('active');
 }
 
 // Ensure the update function still looks like this:
@@ -1021,17 +1025,22 @@ function applySavedSettings() {
 }
 
 function showCommunityPage() {
-  // Hide others
+  // 1. Turn OFF the other pages
   document.getElementById('library-view').style.display = 'none';
   document.getElementById('settings-view').style.display = 'none';
-  // Show Community
+  
+  // 2. Turn ON the Community page
   document.getElementById('community-view').style.display = 'flex';
-  
-  // Update Active Nav
+
+  // 3. Update the menu button highlight
   document.querySelectorAll('.menu-items').forEach(el => el.classList.remove('active'));
-  document.getElementById('nav-community').classList.add('active');
-  
-  fetchCommunityPosts(); // Function to trigger the API call
+  const navBtn = document.getElementById('nav-community'); // Make sure this matches your HTML ID
+  if (navBtn) navBtn.classList.add('active');
+
+  // Refresh the posts every time the user opens the community tab!
+  if (typeof fetchCommunityPosts === "function") {
+    fetchCommunityPosts();
+  }
 }
 
 function renderComment(comment, currentUser) {
@@ -1233,3 +1242,142 @@ async function submitComment() {
     showNotification("Failed to post reply", false);
   }
 }
+
+// ==========================================
+// LANGUAGE TRANSLATION ENGINE
+// ==========================================
+
+let currentLanguage = localStorage.getItem('cloudGame_lang') || 'en';
+// The Dictionary (Notice the two new settings words added!)
+// The Full Dictionary for English and Arabic
+const translations = {
+  en: {
+    library: "LIBRARY",
+    settings: "SETTINGS",
+    community: "COMMUNITY",
+    syncLibrary: "Sync Library",
+    addGame: "Add a Game",
+    autoScan: "Auto-Scan PC",
+    systemStatus: "SYSTEM STATUS",
+    developer: "DEVELOPER",
+    allGames: "ALL GAMES",
+    appSettings: "APPLICATION SETTINGS",
+    system: "System",
+    runOnStartup: "Run on System Startup",
+    runOnStartupDesc: "Launch CloudGame silently in the background when you turn on your PC.",
+    notifications: "Notifications",
+    autoSyncNotif: "Auto-Sync Notifications",
+    autoSyncNotifDesc: "Show a popup in the corner of your screen when a game save is uploaded.",
+    languageSettings: "Language Settings",
+    selectLanguage: "Select Language:",
+    addNonStoreGame: "Add a Non-Store Game",
+    gameDesignation: "Game Designation",
+    gameNamePlaceholder: "e.g. Elden Ring",
+    targetPath: "Target Path",
+    cancel: "CANCEL",
+    addSelectedProgram: "ADD SELECTED PROGRAM",
+    shareGameSave: "Share Game Save",
+    shareDesc: "Copy this link to share your cloud save with a friend.",
+    copy: "Copy",
+    close: "CLOSE",
+    scanSaves: "Scan for Game Saves",
+    scanningDesc: "Scanning common save locations (Documents, AppData, Saved Games)...",
+    scanningDrives: "Scanning drives...",
+    online: "● ONLINE",
+    newPost: "NEW POST",
+    loadingCommunity: "Loading community discussions...",
+    reportBug: "Report a Bug / Suggestion",
+    title: "Title",
+    titlePlaceholder: "e.g. Sync error on God of War",
+    description: "Description",
+    publish: "PUBLISH POST",
+    threadReplies: "Thread Replies",
+    writeReply: "Write a reply...",
+    postReply: "Post Reply"
+  },
+  ar: {
+    library: "المكتبة",
+    settings: "الإعدادات",
+    community: "المجتمع",
+    syncLibrary: "مزامنة المكتبة",
+    addGame: "إضافة لعبة",
+    autoScan: "فحص تلقائي",
+    systemStatus: "حالة النظام",
+    developer: "المطور",
+    allGames: "جميع الألعاب",
+    appSettings: "إعدادات التطبيق",
+    system: "النظام",
+    runOnStartup: "التشغيل عند بدء النظام",
+    runOnStartupDesc: "قم بتشغيل التطبيق في الخلفية عند تشغيل الكمبيوتر.",
+    notifications: "الإشعارات",
+    autoSyncNotif: "إشعارات المزامنة",
+    autoSyncNotifDesc: "إظهار إشعار عند رفع ملف حفظ اللعبة.",
+    languageSettings: "إعدادات اللغة",
+    selectLanguage: "اختر اللغة:",
+    addNonStoreGame: "إضافة لعبة خارجية",
+    gameDesignation: "اسم اللعبة",
+    gameNamePlaceholder: "مثال: Elden Ring",
+    targetPath: "مسار اللعبة",
+    cancel: "إلغاء",
+    addSelectedProgram: "إضافة البرنامج المحدد",
+    shareGameSave: "مشاركة ملف الحفظ",
+    shareDesc: "انسخ هذا الرابط لمشاركة ملف الحفظ مع صديق.",
+    copy: "نسخ",
+    close: "إغلاق",
+    scanSaves: "البحث عن ملفات الحفظ",
+    scanningDesc: "جاري فحص المسارات المشتركة...",
+    scanningDrives: "جاري فحص الأقراص...",
+    online: "● متصل",
+    newPost: "منشور جديد",
+    loadingCommunity: "جاري تحميل المناقشات...",
+    reportBug: "الإبلاغ عن خطأ / اقتراح",
+    title: "العنوان",
+    titlePlaceholder: "مثال: خطأ في مزامنة اللعبة",
+    description: "الوصف",
+    publish: "نشر المنشور",
+    threadReplies: "الردود",
+    writeReply: "اكتب رداً...",
+    postReply: "إرسال الرد"
+  }
+};
+
+function changeLanguage(targetLang) {
+  currentLanguage = targetLang;
+
+  // 2. Save the user's choice permanently to their computer!
+  localStorage.setItem('cloudGame_lang', currentLanguage);
+
+  // Update Sidebar text
+  const langText = document.getElementById('current-lang-text');
+  if (langText) langText.innerText = currentLanguage === 'en' ? 'عربي' : 'English';
+
+  // Update Settings Dropdown
+  const langSelect = document.getElementById('languageSelect');
+  if (langSelect) langSelect.value = currentLanguage;
+
+  // Flip Layout
+  document.body.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+
+  // Translate Text
+  document.querySelectorAll('[data-i18n]').forEach(element => {
+    const translationKey = element.getAttribute('data-i18n');
+    if (translations[currentLanguage] && translations[currentLanguage][translationKey]) {
+      const newText = translations[currentLanguage][translationKey];
+      if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+        element.placeholder = newText;
+      } else {
+        element.innerText = newText;
+      }
+    }
+  });
+}
+
+function toggleLanguage() {
+  const nextLang = currentLanguage === 'en' ? 'ar' : 'en';
+  changeLanguage(nextLang);
+}
+
+// 3. Add this at the bottom! It forces the app to apply the saved language the second it opens.
+document.addEventListener('DOMContentLoaded', () => {
+  changeLanguage(currentLanguage);
+});
