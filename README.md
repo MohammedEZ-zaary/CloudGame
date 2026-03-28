@@ -1,50 +1,36 @@
-# CloudGame – Mega-Powered Game Save Sync for Windows  
-![CloudGame Logo](./readme_images/logo.PNG) 
+🎮 CloudGame
+AI-Powered Game Save Manager for Windows
+Never lose hours of progress again. CloudGame is the ultimate AI-powered save manager that auto-detects your save file locations, seamlessly background-syncs to your Mega.nz cloud, and keeps your library looking flawless. Perfect for non-Steam games, emulators, or multi-PC setups.
 
-Manuly back up and sync game saves to **Mega.nz**—perfect for non-Steam games or multi-PC setups.  
+🔥 Features
+🔄 Seamless Background Auto-Sync
+Runs silently in the system tray. Receive beautiful Steam-style desktop notifications the moment your saves are securely uploaded after a gaming session.
 
----
+🤖 AI-Powered Save Detective (GPT-4o)
+PC games hide saves everywhere. Our intelligent scanner acts as a digital detective, automatically finding your game folders while filtering out system junk. It even detects saves hidden inside Publisher folders (Rockstar, EA, etc.) and Steam userdata.
 
-## 🔥 Features  
-✅ **Mega Cloud Backup** – End-to-end encrypted sync to your Mega.nz account (20GB free).  
-✅ **Cross-Game Support** – Works with Steam, Epic, GOG, emulators, and indie games.  
-✅ **Set-and-Forget** – Runs silently in the background; no manual backups needed.  
-✅ **Lightweight** – Minimal CPU/RAM usage.  
+🖼️ High-Fidelity Library
+Direct integration with the SteamGridDB API automatically fetches official, high-resolution vertical posters (600x900) to make your library look premium.
 
----
+🧠 Predictive Path Auto-Fill
+The AI dynamically predicts the most likely save locations, including complex AppData paths, emulators, and repacks.
 
-## 📥 Installation  
-1. **Download** the latest release from [Releases](#) *(link to your releases page)*.  
-2. **Run** `CloudGame_Installer.exe` (admin rights recommended).  
-3. **Log in** to your Mega.nz account when prompted.  
+☁️ Mega Cloud Backup
+End-to-end encrypted sync directly to your Mega.nz account (utilizing the 20GB free storage tier).
 
+⚡ Sleek & Lightweight
+Built with a high-performance, fully vector-based (SVG) UI for a snappy feel with minimal system impact.
 
-## Login Page 
-![CloudGame Login page](./readme_images/login.PNG)
-## Dashboard Page
+📥 Installation
+Download the v1.2.0 release here.
 
-![CloudGame Login page](./readme_images/dashboard.PNG)
-## Add Game 
-![CloudGame add game](./readme_images/add_game.PNG)
-## Added Game
-![CloudGame add game](./readme_images/added_game.PNG)
-## The press sync library button
+Run CloudGame_Installer.exe (Administrator rights recommended).
 
-## ❓ FAQ  
-**Q: Is my data secure?**  
-A: Yes! Files are encrypted via Mega.nz’s E2EE before upload.  
+Log in to your Mega.nz account when prompted.
 
-**Q: Can I use Google Drive/Dropbox instead?**  
-A: Currently only Mega.nz is supported (future updates may expand options).  
+🚀 How to Use
+Scan for Games: Click the Auto-Scan button. The AI searches your PC for known save locations and fetches the correct cover art.
 
-**Q: Does it work on Linux?**  
-A: Windows-only (Wine/Proton untested).  
+Add to Library: Select the games you want to protect to add them to your dashboard.
 
----
-
-## 📜 License  
-MIT License – Free to use and modify. *Not affiliated with Mega.nz.*  
-
----
-
-*💻 Contribute or report issues on [GitHub](#)!*  
+Play: Launch your games normally! CloudGame watches folders in the background. When you exit, a 15-second debounce algorithm waits for files to finalize before automatically syncing to Mega.
