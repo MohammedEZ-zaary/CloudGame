@@ -617,18 +617,21 @@ function resolveWindowsPath(templatePath) {
 async function getSmartGameData(typedName) {
   
 const prompt = `
-    The user typed the game name "${typedName}". 
-    Return a JSON object with two properties:
-    1. "correctedName": The official, properly capitalized name of the PC game.
-    2. "paths": An array of the 6 most common default Windows save file folder paths for this game. 
-    
-    CRITICAL INSTRUCTIONS FOR PATHS: 
-    - Include variations both WITH and WITHOUT spaces (e.g., "The Last of Us Part II" and "TheLastOfUsPartII").
-    - Explicitly include paths directly inside "%USERPROFILE%\\Documents" and "%USERPROFILE%\\Saved Games" (Do NOT just assume it is inside a "My Games" subfolder).
-    - Use standard Windows environment variables like %APPDATA%, %LOCALAPPDATA%, %USERPROFILE%\\Documents, and %USERPROFILE%\\Saved Games.
-    
-    Output ONLY valid JSON. No markdown formatting, no explanation.
-  `;
+  The user is looking for the PC save file locations for the game: "${typedName}". 
+
+  Return a JSON object with exactly two properties:
+  1. "correctedName": The official, properly capitalized name of the PC game.
+  2. "paths": An array of all highly probable default Windows save file folder paths for this game. 
+  
+  CRITICAL INSTRUCTIONS FOR PATHS: 
+  - Provide all realistic paths, but do not invent fake paths just to fill a quota.
+  - Include variations both WITH and WITHOUT spaces (e.g., "MyGame" vs "My Game").
+  - Use standard Windows environment variables: %APPDATA%, %LOCALAPPDATA%, %USERPROFILE%\\Documents, and %USERPROFILE%\\Saved Games.
+  - Check for and include paths that use the game's Publisher name (e.g., "%USERPROFILE%\\Documents\\Electronic Arts\\...").
+  - If the game saves via Steam Cloud, include the standard Steam userdata path pattern (e.g., "C:\\Program Files (x86)\\Steam\\userdata\\<user-id>\\<app-id>\\remote").
+  
+  Output ONLY valid JSON. No markdown formatting, no backticks, no explanation.
+`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -638,13 +641,14 @@ const prompt = `
         'Authorization': `Bearer ${OPENAI_API_KEY2}`
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.2
       })
     });
 
     const data = await response.json();
+    // console.log("Raw AI Response:", data); // Log the raw response for debugging
     // 1. Check if OpenAI returned an API/Billing error
     if (data.error) {
       console.error("OpenAI Error:", data.error.message);
@@ -715,19 +719,24 @@ async function filterGameFoldersWithAI(folderNamesList) {
   // If no folders were found, just return empty
   if (!folderNamesList || folderNamesList.length === 0) return [];
 
-  const prompt = `
-    I am scanning a Windows PC for game save files. I found the following folder names:
-    ${JSON.stringify(folderNamesList)}
+ const prompt = `
+  I am scanning a Windows PC for game save files. I found the following folder names:
+  ${JSON.stringify(folderNamesList)}
 
-    Your job is to act as a filter. Identify ONLY the folders that are named after recognized PC video games.
-    CRITICAL INSTRUCTIONS:
-    - Ignore generic software (Adobe, Microsoft, Google, etc.).
-    - Ignore hardware drivers (Intel, Nvidia, AMD).
-    - Ignore generic system folders (CrashDumps, Profiles, Saves, Temp).
-    
-    Return a strict JSON array of strings containing ONLY the verified game names from the list. 
-    Output ONLY valid JSON. No markdown formatting, no explanation.
-  `;
+  Your job is to act as a strict filter. 
+  Return a JSON object with a single property "gameFolders" containing an array of strings. 
+  This array must contain ONLY the folder names from the provided list that are relevant to PC video games.
+
+  CRITICAL INSTRUCTIONS:
+  - KEEP folders named after recognized PC games (e.g., "The Witcher 3", "Cyberpunk 2077").
+  - KEEP folders named after Game Publishers or Studios (e.g., "Electronic Arts", "Rockstar Games", "Square Enix", "Ubisoft").
+  - KEEP the specific folder named "My Games" (if present).
+  - IGNORE generic non-game software (e.g., Adobe, Microsoft, Google, Discord, OBS).
+  - IGNORE hardware drivers and utilities (e.g., Intel, Nvidia, AMD, Razer, Corsair).
+  - IGNORE generic system or OS folders (e.g., CrashDumps, Profiles, Temp, AppData, LocalLow).
+  
+  Output ONLY valid JSON. No markdown formatting, no backticks, no explanation.
+`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -737,25 +746,24 @@ async function filterGameFoldersWithAI(folderNamesList) {
         'Authorization': `Bearer ${OPENAI_API_KEY2}`
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.1 // Low temperature so it doesn't get creative
+        temperature: 0.1, // Low temperature so it doesn't get creative
+        response_format: { type: "json_object" }
       })
     });
 
     const data = await response.json();
-    
+    // console.log("Raw AI Filter Response:", data); // Log the raw response for debugging
     if (data.error) {
       console.error("AI Filter Error:", data.error.message);
       return folderNamesList; // FAILSAFE: If AI breaks, return all folders so the app still works
     }
 
     let aiResponse = data.choices[0].message.content.trim();
-    if (aiResponse.startsWith("```")) {
-      aiResponse = aiResponse.replace(/^```json\n/, "").replace(/^```\n/, "").replace(/\n```$/, "");
-    }
-
-    return JSON.parse(aiResponse);
+  
+    const parsedData = JSON.parse(aiResponse);
+    return parsedData.gameFolders || [];
   } catch (error) {
     console.error("Failed to parse AI Filter response:", error);
     return folderNamesList; // FAILSAFE: Return all folders if it crashes
